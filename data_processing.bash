@@ -1,8 +1,5 @@
 #!/bin/bash
 
-# Set the OneDrive environment variable directly in the script - for Paul only
-#export OneDrive="/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation"
-
 while getopts ":p:c:s:e:" opt; do
   case $opt in
     p) PPR="$OPTARG"
@@ -28,19 +25,17 @@ repo_dir=$PWD
 # Go to Raw Data directory
 cd -- "$OneDrive"
 pwd
-cd "ACF FVPS/Data/Quantitative/Raw Data"
+cd "YourDataDirectory/Raw Data"
 
 root_dir=$PWD
 
+# Identify 2023 States and Tribes and Coalitions Excel files from your raw data directory
 ppr_name=$(find States\ and\ Tribes -maxdepth 1 -type f -name "*.xlsx")
 coalition_name=$(find Coalitions -maxdepth 1 -type f -name "*.xlsx")
-#secondppr_name=$(find States\ and\ Tribes\ 2024 -maxdepth 1 -type f -name "*.xlsx")
-secondppr_name=$(find "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data/Quantitative/Raw Data/States and Tribes 2024" -maxdepth 1 -type f -name "*.xlsx")
-echo "DEBUG: secondppr_name=${secondppr_name}"
 
-#secondcoalition_name=$(find Coalitions\ 2024 -maxdepth 1 -type f -name "*.xlsx")
-secondcoalition_name=$(find "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data/Quantitative/Raw Data/Coalitions 2024" -maxdepth 1 -type f -name "*.xlsx")
-echo "DEBUG: new_secondcoalition=${new_secondcoalition}"
+# Identify 2024 States and Tribes and Coalitions Excel files from your raw data directory
+secondppr_name=$(find "YourDataDirectory/Raw Data/States and Tribes 2024" -maxdepth 1 -type f -name "*.xlsx")
+secondcoalition_name=$(find "YourDataDirectory/Coalitions 2024" -maxdepth 1 -type f -name "*.xlsx")
 
 
 ppr_name_basename="${ppr_name%.xlsx}"
@@ -73,14 +68,6 @@ legacy_ppr="States and Tribes/Archive/${rename_ppr}"
 legacy_coalition="Coalitions/Archive/${rename_coalition}"
 legacy_secondppr="States and Tribes 2024/Archive/${rename_secondppr}"
 legacy_secondcoalition="Coalitions 2024/Archive/${rename_secondcoalition}"
-
-echo "DEBUG: Attempting to read ${new_states_OLDC_filename}"
-
-
-echo "DEBUG: Found PPR file -> ${ppr_name}"
-echo "DEBUG: Found Coalition file -> ${coalition_name}"
-echo "DEBUG: Found Second PPR file -> ${secondppr_name}"
-echo "DEBUG: Found Second Coalition file -> ${secondcoalition_name}"
 
 
 # Rename the file
@@ -116,25 +103,18 @@ echo "Copying ${COALITION} to Raw Data directory and renaming..."
 cp "${COALITION}" "Coalitions/${new_coalition}"
 
 echo "Copying ${SECONDPPR} to Raw Data directory and renaming..."
-cp "${SECONDPPR}" "States and Tribes 2024/${new_secondppr}" || echo "ERROR: Failed to copy ${SECONDPPR}"
+cp "${SECONDPPR}" "States and Tribes 2024/${new_secondppr}" 
 
 echo "Copying ${SECONDCOALITION} to Raw Data directory and renaming..."
-cp "${SECONDCOALITION}" "Coalitions 2024/${new_secondcoalition}" || echo "ERROR: Failed to copy ${SECONDCOALITION}"
+cp "${SECONDCOALITION}" "Coalitions 2024/${new_secondcoalition}" 
 
 
 # Run data processing
 echo "Running data processing..."
 
-echo "DEBUG: Running Python script with secondppr_name=${secondppr_name}"
-echo "DEBUG: Running Python script with new_states_OLDC_filename=${secondppr_name}"
-#echo "DEBUG: Running Python script with new_coalitions_OLDC_filename=${new_coalitions_OLDC_filename}"
-echo "DEBUG: Running Python script with new_coalitions_OLDC_filename=${new_secondcoalition}"
-
 
 
 cd "${repo_dir}"
-#. /Users/pursino/Desktop/git/fvpsa-data-analysis/fvpsa_env/bin/activate  
-. /Users/pursino/Desktop/git/fvpsa-data-analysis/ScriptFiles/Processing\ Scripts/fvpsa_env/bin/activate
 cd ScriptFiles/Processing\ Scripts
 
 # For 2023 data processing
@@ -142,7 +122,6 @@ python -u process_PPR_data.py -f -pc
 
 # for 2024 data processing
 python -u process_PPR_data.py -ps2024 --new_states_OLDC_filename="${secondppr_name}" -pc2024 --new_coalitions_OLDC_filename="${secondcoalition_name}"
-#python -u process_PPR_data.py -ps2024 --new_states_OLDC_filename="${secondppr_name}" -spf2024 "${repo_dir}/Processed Data/States and Tribes 2024/HistoricalPPR_${now}_processed.xlsx" -pc2024 --new_coalitions_OLDC_filename="${secondcoalition_name}" -cf2024 "${repo_dir}/Processed Data/Coalitions 2024/coalitions_processed_${now}.xlsx"
 
 deactivate
 
