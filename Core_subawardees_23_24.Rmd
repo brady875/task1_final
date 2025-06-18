@@ -1,0 +1,1443 @@
+---
+title: "Subawardee Core Briefing Report"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  word_document:
+    reference_docx: !expr file.path(here::here(), "data_analysis", "briefing_report_utils", "briefing_report_template.docx")
+editor_options: 
+  chunk_output_type: console
+params:
+  report_link: ""
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  out.width = '80%',
+  fig.width = 12,
+  fig.height = 7,
+  fig.align = 'center'
+)
+
+# Core Subawardee briefing report
+# States and Territories 
+
+
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(tidycensus)
+library(scales)
+library(ggrepel)
+library(DT)
+library(janitor)
+library(pins)
+library(qs)
+library(webshot2)
+library(tigris)
+library(writexl)
+
+# Read data
+ source(
+   file.path(
+    "/Users/pursino/Desktop/git/fvpsa-data-analysis/data_analysis/briefing_report_utils/briefing_report_flextable_functions.R"
+   ))
+ 
+ source(
+   file.path(
+    "/Users/pursino/Desktop/git/fvpsa-data-analysis/data_analysis/ARP/arp_data_analysis_helper_functions.R"
+   ))
+ 
+ onedrive_path <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation"
+ 
+ data_folder <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data"
+
+# Load helper scripts
+# Read data
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "ARP",
+#     "arp_data_analysis_helper_functions.R"
+#   )
+# )
+# 
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "briefing_report_utils",
+#     "briefing_report_flextable_functions.R"
+#   )
+# )
+# 
+# Load data folder
+# data_folder <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General",
+#   "Data")
+
+# Select the version for data_for_r produced by process_ppr_data.py
+#version = "20250606T145440Z-04a0e"
+version = "20250612T172919Z-def97"
+board <- board_folder(file.path(
+  data_folder,
+  "Quantitative",
+  "Outputs"
+), versioned = TRUE)
+
+
+dat <- pin_read(board, name = "data_for_r", version = version)
+lapply(names(dat), function(name) {
+  assign(name, dat[[name]], envir = .GlobalEnv)
+})
+
+ funding_path <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Background Information and Resources/Funding Tables/Funding Tables_updated_07062024.xlsx"
+ 
+ funding <- read_excel(funding_path)
+
+# Load data to funding table
+# funding_path <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General",
+#   "Background Information and Resources",
+#   "Funding Tables"
+# )
+
+# funding <- read_excel(file.path(funding_path,
+#                       "Funding Tables_updated_07062024.xlsx"))
+
+
+
+# lookup_cultspec <- read_excel(file.path(data_folder,
+#                                         "Quantitative",
+#                                         "Lookup Tables",
+#                                         "Data_Element_Crosswalk_state_Core_04102024.xlsx"))
+
+
+
+
+# Load HHS Regions data
+# regional_list <- read_excel(file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General",
+#   "Background Information and Resources",
+#   "hhs_regions.xlsx")
+# ) |>
+#   rename(
+#     "PostalCode" = `State Abb`,
+#     "Region" = `HHS Region`
+#   ) |>
+#   select(-c(State))
+
+
+ regional_list <- read_excel(file.path(
+   onedrive_path,
+   "ACF FVPS",
+   "Background Information and Resources",
+   "hhs_regions.xlsx")
+ ) |>
+   rename(
+     "PostalCode" = `State Abb`,
+     "Region" = `HHS Region`
+   ) |>
+   select(-c(State))
+
+ # Filtering to only State-Wide DV Coalitions
+ coalitions <- read_excel(file.path(
+   "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data/Quantitative/Lookup Tables",
+   "core_coalition_names.xlsx"
+ ),
+ sheet = "Updated Data name"
+ ) |>
+   select(
+     data_name,
+     coalition,
+     state,
+     statewide_dv
+   ) |>
+   filter(statewide_dv == TRUE)
+
+
+
+
+# coalitions <- read_excel(file.path(
+#   data_folder,
+#   "Quantitative",
+#   "Lookup Tables",
+#   "core_coalition_names.xlsx"
+# ),
+# sheet = "Updated Data name") |>
+#   select(
+#     data_name,
+#     coalition,
+#     state,
+#     statewide_dv
+#   ) |>
+#   filter(statewide_dv == TRUE)
+
+
+
+wide <- bind_rows(wide_23, wide_24)
+
+# Extract states and tribes data
+core_dat <- wide |>
+  filter((Year == 2023 | Year == 2024), `Program Acronym` == "Core FVPSA", `Grant Type` == "State"
+         ) 
+
+
+# extract State funding data
+funding_core <- funding %>%
+  filter(`Grant Program` %in% c(
+    "FVPS STATE AND TERRITORY ESTIMATED FFY 2023 ALLOTMENTS",
+    "FVPS STATE AND TERRITORY ESTIMATED FFY 2024 ALLOTMENTS"
+  ))
+
+# Remove unused columns and ensure sub23 has the exact same columns as sub24 for downstream merge
+sub24 <- sub24 %>%
+  select(-`UEI[Unique Entity Identifier]`,-`Subawardee - FVPSA Funding Type`,-`Subawardee - FVPSA Primary Services Type`)
+
+sub23 <- sub23 %>%
+  select(colnames(sub24))
+
+
+
+# Combine 2023 and 2024 subawardee data
+sub23 <- sub23 |> mutate(DunsId9 = as.character(DunsId9))
+sub24 <- sub24 |> mutate(DunsId9 = as.character(DunsId9))
+
+subawardees <- bind_rows(sub23, sub24)
+
+
+subawardees_core <- subawardees %>%
+  filter(ProgAcronym == "Core FVPSA" & (Fy == 2023 | Fy == 2024) & !is.na(`Subawardee List - Subawardee Name`))|>
+  select(-c(SubAwdCultSpecf,
+            cult_cat,
+            csus,
+            `Rpt-Receipt-Id`,
+            `Screen-Iteration`,
+            `Screen-Name`,
+            `Row-Iteration`,
+            FormTitle,
+            FormShortTitle,
+            DunsId9,
+            DunsId4)
+         ) |>
+  # remove subawardees that didn't get awarded anything
+  filter(`Subawardee List - FVPSA Funding Amount` != 0) |>
+   # aggregate funding by shelter type, rural designation, and culturally specific category
+  # Only using Cultspec2 because we are only interested in if the grantee served a mapped CS/US category
+  # If you want to consider different cultspec categories, you must consider cultspec3, cultspec4...
+  group_by(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    `Shelter Type`,
+    `Rural Designation`,
+    CultSpec2
+  ) |>
+  mutate(
+    funding = sum(`Subawardee List - FVPSA Funding Amount`)
+  ) |>
+  distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    funding,
+    `Shelter Type`,
+    `Rural Designation`,
+    CultSpec2,
+    .keep_all = TRUE
+  ) |>
+  ungroup()
+
+# Global variables ----
+init_report_link_row(params$report_link)
+
+```
+
+
+
+## Data Version Used:
+# Note: 06/04 data was actually pulled on 04/28
+
+```{r}
+
+(pins::pin_meta(board, "data_for_r", version = pins::pin_versions(board, "data_for_r") |> 
+  filter(created == max(created)) |> pull(version)))$description
+
+```
+
+## Total Number of Subawards 
+
+The number of subawardees in each year
+
+```{r}
+
+# distinct recipients of subawards, irrespective of shelter type or rural designation
+distinct_sub <- subawardees_core |>
+  # Remove duplicate subawardees
+  distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    .keep_all = TRUE
+  ) |>
+  group_by(Fy) |>
+  summarise(
+    `Total Subawardees` = n()
+  ) |>
+  mutate(
+    # Use case_when() for multiple conditions
+    Fy = case_when(
+      Fy == 2023 ~ "FY23",
+      Fy == 2024 ~ "FY24",
+      TRUE ~ as.character(Fy)  
+    )
+  ) |>
+  rename(
+    "Fiscal Year" = Fy
+  ) 
+
+# Update table caption
+format_flextable(distinct_sub, caption = "Table X. Summary of Family Violence Prevention and Services Act Awards to States and Territories, FY23-FY24 Subawardees")
+
+```
+
+## Total Funds Distributed 
+
+# The total amount ($) of funds distributed by the states to all subawardees 
+
+FVPS State and Territory Formula Grants
+
+```{r}
+
+# total funding by program 
+total_funding <- funding_core %>%
+  group_by(`Grant Program`) %>%
+  summarize(`Total Funding to Grant Recipients` = sum(Amount, na.rm = TRUE)) %>%
+  mutate(
+    FY = case_when(
+      str_detect(`Grant Program`, "FFY 2023") ~ "FY23",
+      str_detect(`Grant Program`, "FFY 2024") ~ "FY24"
+    ),
+    `Total Funding to Grant Recipients` = dollar(`Total Funding to Grant Recipients`)
+  ) %>%
+  select(FY, `Total Funding to Grant Recipients`)
+
+# total subawardee funding for FY23/FY24
+total_subawardee <- subawardees_core %>%
+  filter(Fy %in% c(2023, 2024)) %>%
+  group_by(Fy) %>%
+  summarize(`Total Grant Recipient Funding to Subawardees` = sum(funding, na.rm = TRUE)) %>%
+  mutate(
+    FY = ifelse(Fy == 2023, "FY23", "FY24"),
+    `Total Grant Recipient Funding to Subawardees` = dollar(`Total Grant Recipient Funding to Subawardees`)
+  ) %>%
+  select(FY, `Total Grant Recipient Funding to Subawardees`)
+
+
+summary_23_24 <- total_subawardee %>%
+  left_join(total_funding, by = "FY") %>%
+  pivot_longer(
+    cols = c(`Total Funding to Grant Recipients`, `Total Grant Recipient Funding to Subawardees`),
+    names_to  = "Funding Metric",
+    values_to = "Amount"
+  ) %>%
+  pivot_wider(
+    names_from  = FY,
+    values_from = Amount
+  )
+
+format_flextable(
+  summary_23_24,
+  caption = "Table X. Summary of Family Violence Prevention and Services Act Awards to States and Territories, Grant Recipient and Subawardee Funding (FY23–FY24)"
+)
+
+```
+
+
+
+
+## Type of Subaward 
+
+# Shelter, non-shelter, coalition, other by region (table)
+
+```{r}
+
+# write regional list
+regional_factor = c("Region 1",
+                    "Region 2",
+                    "Region 3",
+                    "Region 4",
+                    "Region 5",
+                    "Region 6",
+                    "Region 7",
+                    "Region 8",
+                    "Region 9",
+                    "Region 10")
+
+# merge with full subawardee list
+subawardees_regional <- merge(subawardees_core, regional_list, by = "PostalCode", all.x = TRUE)
+
+
+# This chunk of code is changing the shelter type to coalition if the subawardee is a coalition.
+subawardees_regional_coa <- subawardees_regional |>
+  left_join(coalitions, by = c("Subawardee List - Subawardee Name" = "data_name")) |>
+  mutate(
+    coa = !is.na(coalition),
+    `Shelter Type` = ifelse(
+      coa == TRUE, "Coalition", `Shelter Type`
+    ),
+    Region = factor(Region, levels = regional_factor)
+  )
+
+
+# dataframe that we will use for cases where we want distinct shelter type. If a subawardee has more than one shelter type, we keep that distinct. 
+# If they are duplicated across shelter type, we add the funding together irrespective of whether they were also duplicated across urban/rural 
+subawardees_coa_shelter <- subawardees_regional_coa |>
+  group_by(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    `Shelter Type`
+  ) |>
+    mutate(
+    funding = sum(funding)
+  ) |>
+    distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    funding,
+    `Shelter Type`,
+    .keep_all = TRUE
+  ) |>
+  ungroup()
+
+# total subawardees by region
+by_region_subawardees <- subawardees_coa_shelter |> 
+  group_by(
+    Region, `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n()
+  ) |> 
+  pivot_wider(
+    names_from = `Shelter Type`,
+    values_from = `Total Subawardees`,
+    values_fill = 0
+  ) |>
+  rename(
+    "Unspecified" = Select
+  )
+
+sub_23 <- by_region_subawardees |>
+  filter(Fy == "2023") |>
+  mutate(
+    Fy = "FY23"
+  ) |>
+  janitor::adorn_totals() |>
+  mutate(
+    Region = factor(Region, levels = c("Total",
+                                       regional_factor))
+  ) |>
+  arrange(Region)
+
+sub_24 <- by_region_subawardees |>
+  filter(Fy == "2024") |>
+  mutate(
+    Fy = "FY24"
+  ) |>
+  janitor::adorn_totals() |>
+  mutate(
+    Region = factor(Region, levels = c("Total",
+                                       regional_factor))
+  ) |>
+  arrange(Region)
+
+regional_type <- rbind(sub_23, sub_24) |>
+  select(Region,
+         Shelter,
+         `Non-shelter`,
+         Coalition,
+         Other,
+         `Unspecified`,
+         Fy) |>
+  mutate(
+    Region = as.character(Region),
+    Region = ifelse(
+      Region == "Total" & row_number() == 1, "FY23 - Total", Region
+    ),
+    Region = ifelse(
+      Region == "Total", "FY24 - Total", Region
+    )
+  )
+
+# create a total column that is different from the actual total of the table: distinct subawardees
+by_distinct_subawardees <- subawardees_regional_coa |> 
+  # remove all duplicate subawardees: this is a distinct count, so we don't care if they're duplicated over shelter/urban
+  distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    .keep_all = TRUE
+  ) |>
+  group_by(
+    Region, Fy
+  ) |> 
+  summarise(
+    "Regional Total*" = n()
+  ) 
+
+
+sub_23_dis <- by_distinct_subawardees |>
+  filter(Fy == "2023") |>
+  mutate(
+    Fy = "FY23"
+  ) |>
+  janitor::adorn_totals() |>
+  mutate(
+    Region = as.character(Region),
+    Region = ifelse(
+      Region == "Total", "FY23 - Total", Region
+    )
+  ) 
+
+sub_24_dis <- by_distinct_subawardees |>
+  filter(Fy == "2024") |>
+  mutate(
+    Fy = "FY24"
+  ) |>
+  janitor::adorn_totals() |>
+  mutate(
+    Region = as.character(Region),
+    Region = ifelse(
+      Region == "Total", "FY24 - Total", Region
+    )
+  ) 
+
+# bind with the original table
+regional_typedis <- rbind(sub_23_dis, sub_24_dis) 
+
+regional_type2 <- regional_type |>
+  left_join(regional_typedis, by = c("Region", "Fy")) |>
+  select(-c(Fy))
+
+
+format_flextable(regional_type2, caption = "Table X. Type of FVPSA State and Territory Subawardees by OFVPS Region, Shelter Type")
+
+```
+
+# Number of shelter and non-shelter programs by region
+
+See "Table X. Type of FVPSA State and Territory Subawardees by OFVPS Region, Shelter Type" and below.
+
+* some subawardees listed under more than one type
+
+```{r}
+
+# plot of total types of subawardees by year 
+
+regional_type_plot <- rbind(sub_23, sub_24) |>
+  filter(Region != "Total") |>
+  pivot_longer(cols = c(Coalition, `Non-shelter`, Other, Shelter, `Unspecified`),
+               names_to = "shelter_type",
+               values_to = "total"
+               ) |>
+  mutate(
+    shelter_type = factor(shelter_type, levels = c("Shelter",
+                                                   "Non-shelter",
+                                                   "Coalition",
+                                                   "Other",
+                                                   "Unspecified")
+    )
+  ) |>
+  group_by(Fy, shelter_type) |>
+  summarize(totals = sum(total))
+
+# write plot
+
+plot_shelter_type <- ggplot(regional_type_plot, 
+                            aes(x = shelter_type, y = totals, 
+                                fill = Fy)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=comma(totals)), vjust=-0.3, size=3.5, position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("FY23" = "#BCD9ED", "FY24" = "#264A64")) +
+  scale_y_continuous(labels = comma, limits = c(0, 1200)) +
+  labs(
+       x = "Subawardee Type", 
+       y = "Total Subawardees", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) 
+
+print(plot_shelter_type)
+
+```
+
+# Urban/rural by region (table)
+
+```{r}
+
+# dataframe that we will use for cases where we want distinct urban designation. If a subawardee has more than one rural designation, we keep that distinct. If they are duplicated across rural designation, we add the funding together irrespective of whether they were also duplicated across shelter type. 
+subawardees_coa_rural <- subawardees_regional_coa |>
+  group_by(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    `Rural Designation`
+  ) |>
+    mutate(
+    funding = sum(funding)
+  ) |>
+    distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    funding,
+    `Rural Designation`,
+    .keep_all = TRUE
+  ) |>
+  ungroup()
+
+# total subawardees by region
+by_region_subawardeesurb <- subawardees_coa_rural |> 
+  group_by(
+    Region, `Rural Designation`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n()
+  ) |> 
+  pivot_wider(
+    names_from = `Rural Designation`,
+    values_from = `Total Subawardees`,
+    values_fill = 0
+  ) |>
+  rename(
+    "Unspecified" = Select
+  )
+
+sub_23urb <- by_region_subawardeesurb |>
+  filter(Fy == "2023") |>
+  mutate(
+    Fy = "FY23"
+  ) |>
+  janitor::adorn_totals() |>
+  mutate(
+    Region = factor(Region, levels = c("Total",
+                                       regional_factor))
+  ) |>
+  arrange(Region)
+
+sub_24urb <- by_region_subawardeesurb |>
+  filter(Fy == "2024") |>
+  mutate(
+    Fy = "FY24"
+  ) |>
+  janitor::adorn_totals() |>
+  mutate(
+    Region = factor(Region, levels = c("Total",
+                                       regional_factor))
+  ) |>
+  arrange(Region)
+
+regional_typeurb <- rbind(sub_23urb, sub_24urb) |>
+  select(Region,
+         Urban,
+         Suburban,
+         Rural,
+         Frontier,
+         `Unspecified`,
+         Fy) |>
+  mutate(
+    Region = as.character(Region),
+    Region = ifelse(
+      Region == "Total" & row_number() == 1, "FY23 - Total", Region
+    ),
+    Region = ifelse(
+      Region == "Total", "FY24 - Total", Region
+    )
+  )
+
+regional_type2urb <- regional_typeurb |>
+  left_join(regional_typedis, by = c("Region", "Fy")) |>
+  select(-c(Fy))
+
+
+format_flextable(regional_type2urb, caption = "Table X. Type of FVPSA State and Territory Subawardees by OFVPS Region, Geographical Designation")
+
+```
+
+## Subaward Funding 
+
+# The total by shelter type
+
+Here we're using distinct shelter type. So subawardees that provide shelter services received x in shelter funding
+
+```{r}
+
+by_shelter_total <- subawardees_coa_shelter |> 
+  group_by(
+    `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawards" = sum(funding, na.rm = TRUE)
+  ) |>
+  mutate(
+    `Shelter Type` = ifelse(
+      `Shelter Type` == "Select", "Unspecified", `Shelter Type`
+    ),
+    Fy = ifelse(
+      Fy == 2023, "FY23", "FY24"
+    ),
+    `Shelter Type` = factor(`Shelter Type`, levels = c("Shelter",
+                                                       "Non-shelter",
+                                                       "Coalition",
+                                                       "Other",
+                                                       "Unspecified")
+                            )
+  )
+
+by_shelter_tablet <- by_shelter_total |>
+  mutate(
+    `Total Subawards` = dollar(`Total Subawards`, accuracy = 1)
+  ) |>
+  spread(
+    key = Fy, 
+    value = `Total Subawards`
+  ) |>
+  arrange(`Shelter Type`) 
+
+format_flextable(by_shelter_tablet, caption = "Table X. Total Subawards to FVPSA State and Territory Subawardees by Shelter Status")
+
+```
+
+
+# The average amount for all subawards in 2023 and 2024
+
+```{r}
+
+# Here we're presenting this information as the average subaward per subawardee. 
+
+average_award <- subawardees_regional_coa |> 
+  # remove all duplicate subawardees: this is a distinct count, so we don't care if they're duplicated over shelter/urban
+  group_by(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode
+  ) |>
+  summarize(
+    funding = sum(funding)
+  ) |>
+  group_by(Fy) |>
+  summarize(
+    average_award = mean(funding, na.rm = TRUE)
+  )
+
+average_award
+
+plot_awardt <- ggplot(by_shelter_total, 
+                            aes(x = `Shelter Type`, y = `Total Subawards`, 
+                                fill = Fy)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=dollar(`Total Subawards`, 
+                             accuracy = 1)), 
+            vjust=-0.3, size=3.2, 
+            position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("FY23" = "#BCD9ED", "FY24" = "#264A64")) +
+  scale_y_continuous(labels = dollar,limits = c(0, 100000000)) +
+  labs(
+       x = "Subawardee Type", 
+       y = "Total Subawards", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) 
+
+plot_awardt
+
+
+```
+
+# Average subaward amount by subawardee type (coalitions, shelter, non-shelter) in 2023 and 2024
+
+Figure X. Average Subaward to FVPSA State and Territory Subawardees by Shelter Type Across FY23 and FY24.
+
+```{r}
+
+# the average amount for all subawards in 2023 and 2024. Here we're using the subawardees_coa_shelter dataframe because we want distinct shelter type.
+by_shelter_award <- subawardees_coa_shelter |> 
+  group_by(
+    `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Average Award" = mean(funding, na.rm = TRUE)
+  ) |>
+  mutate(
+    `Shelter Type` = ifelse(
+      `Shelter Type` == "Select", "Unspecified", `Shelter Type`
+    ),
+    Fy = ifelse(
+      Fy == 2023, "FY23", "FY24"
+    ),
+    `Shelter Type` = factor(`Shelter Type`, levels = c("Shelter",
+                                                       "Non-shelter",
+                                                       "Coalition",
+                                                       "Other",
+                                                       "Unspecified")
+                            )
+  )
+
+# Create the table with correct formatting
+by_shelter_table <- by_shelter_award |>
+  mutate(
+    `Average Award` = dollar(`Average Award`, accuracy = 1)
+  ) |>
+  spread(
+    key = Fy, 
+    value = `Average Award`
+  ) |>
+  arrange(`Shelter Type`) 
+
+# Format table output
+format_flextable(by_shelter_table, caption = "Table X. Average Subaward to FVPSA State and Territory Subawardees by Shelter Status (FY23 & FY24)")
+
+# Create the plot
+plot_award <- ggplot(by_shelter_award, 
+                     aes(x = `Shelter Type`, y = `Average Award`, 
+                         fill = factor(Fy))) +  # Ensure Fy is categorical
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=dollar(`Average Award`, accuracy = 1)), 
+            vjust=-0.3, size=3.5, 
+            position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("FY23" = "#BCD9ED", "FY24" = "#264A64")) +  
+  scale_y_continuous(labels = dollar,limits = c(0, 200000)) +
+  labs(
+       x = "Subawardee Type", 
+       y = "Average Subaward Distributed", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16)
+  ) 
+
+# Ensure the plot is displayed
+print(plot_award)
+
+
+```
+
+
+# Range (maximum and minimum) subaward funding for shelter and non-shelter service programs
+
+```{r}
+
+# again, using distinct shelter type here where we summed across urban/rural
+
+range_award <- subawardees_coa_shelter |>
+  group_by(`Shelter Type`, Fy) |>
+  summarise(
+    min_money_received = min(funding),
+    max_money_received = max(funding)
+  ) |>
+  mutate(
+    min_money_received = dollar(min_money_received),
+    max_money_received = dollar(max_money_received),
+    `Range of Funding` = paste(min_money_received, max_money_received, sep = " - "),
+    `Shelter Type` = ifelse(
+      `Shelter Type` == "Select", "Unspecified", `Shelter Type`
+    )
+  ) 
+
+range23 <- range_award |>
+  filter(Fy == 2023) |>
+  mutate(
+    `Shelter Type` = factor(
+      `Shelter Type`, levels = c("Shelter", "Non-shelter", "Coalition", "Other", "Unspecified")
+  )) |>
+  arrange(
+    `Shelter Type`
+  ) |>
+  select(
+    `Shelter Type`, `Range of Funding`
+  )
+
+range24 <- range_award |>
+  filter(Fy == 2024) |>
+  mutate(
+    `Shelter Type` = factor(
+      `Shelter Type`, levels = c("Shelter", "Non-shelter", "Coalition", "Other", "Unspecified")
+  )) |>
+  arrange(
+    `Shelter Type`
+  ) |>
+  select(
+    `Shelter Type`, `Range of Funding`
+  )
+
+fy23_row <- data.frame("Shelter Type" = "FY23", `Range of Funding` = NA) |>
+  rename("Shelter Type" = Shelter.Type,
+         "Range of Funding" = Range.of.Funding)
+fy24_row <- data.frame("Shelter Type" = "FY24", `Range of Funding` = NA) |>
+  rename("Shelter Type" = Shelter.Type,
+         "Range of Funding" = Range.of.Funding)
+
+range_fin <- bind_rows(
+  fy23_row,
+  range23,
+  fy24_row,
+  range24
+)
+
+format_flextable(range_fin, caption = "Table X. Range of Funding to FVPSA State and Territory Subawardees by Shelter Type")
+
+```
+
+
+
+# States with highest and lowest number of shelter subawards
+
+awards are usually higher if a smaller number given out. 
+
+```{r}
+
+regional_type2 <- subawardees_coa_shelter |> 
+  group_by(
+    Region, `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n()
+  ) |>
+  filter(`Shelter Type` == "Shelter") |>
+  mutate(
+    Fy = ifelse(
+      Fy == 2024, "FY24", "FY23"
+    ),
+    Region = factor(Region, levels = regional_factor)
+  )
+
+# plot shelter highest
+plot_shelter_region <- ggplot(regional_type2, 
+                            aes(x = Region, y = `Total Subawardees`, 
+                                fill = Fy)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=comma(`Total Subawardees`)), vjust=-0.5, size=3.5, position = position_dodge(width = 0.9)) + 
+  scale_fill_manual(values = c("FY23" = "#BCD9ED", "FY24" = "#264A64")) +
+  scale_y_continuous(labels = comma, limits = c(0, 225), breaks = seq(0, 225, 25)) + 
+  labs(
+       x = "Region", 
+       y = "Total Subawardees", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) 
+  
+plot_shelter_region
+
+
+
+# find the stats for top 3
+
+shelter_top <- subawardees_coa_shelter |> 
+  group_by(
+    PostalCode, `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n(),
+    average_award = mean(funding, na.rm = TRUE)
+  ) |>
+  filter(`Shelter Type` == "Shelter") |>
+  arrange(-`Total Subawardees`)
+
+shelter_avg <- shelter_top |>
+  group_by(PostalCode) |>
+  summarise(
+    avg_sub = mean(`Total Subawardees`, na.rm = TRUE)
+  ) |>
+  arrange(-avg_sub)
+
+head(shelter_top, 10)
+head(shelter_avg, 5)
+
+# find the stats for bottom 3
+
+shelter_top <- shelter_top |>
+  arrange(`Total Subawardees`)
+
+shelter_avg <- shelter_avg |>
+  arrange(avg_sub)
+
+head(shelter_top, 10)
+head(shelter_avg, 5)
+
+```
+
+# States with highest/lowest number of non-shelters
+
+```{r}
+
+regional_type3 <- subawardees_coa_shelter |> 
+  group_by(
+    Region, `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n()
+  ) |>
+  filter(`Shelter Type` == "Non-shelter") |>
+  mutate(
+    Fy = ifelse(
+      Fy == 2024, "FY24", "FY23"
+    ),
+    Region = factor(Region, levels = regional_factor)
+  )
+
+# plot non-shelter highest
+plot_nonshelter_region <- ggplot(regional_type3, 
+                            aes(x = Region, y = `Total Subawardees`, 
+                                fill = Fy)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=comma(`Total Subawardees`)), vjust=-0.3, size=3.5, position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("FY24" = "#BCD9ED", "FY23" = "#264A64")) +
+  scale_y_continuous(labels = comma, limits = c(0, 75), breaks = seq(0, 75, 25))  +
+  labs(
+       x = "Region", 
+       y = "Total Subawardees", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) 
+  
+plot_nonshelter_region
+
+# find the stats for top 3
+
+nonshelter_top <- subawardees_coa_shelter |> 
+  group_by(
+    PostalCode, `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n(),
+    average_award = mean(funding, na.rm = TRUE)
+  ) |>
+  filter(`Shelter Type` == "Non-shelter") |>
+  arrange(-`Total Subawardees`)
+
+nonshelter_avg <- nonshelter_top |>
+  group_by(PostalCode) |>
+  summarise(
+    avg_sub = mean(`Total Subawardees`, na.rm = TRUE)
+  ) |>
+  arrange(-avg_sub)
+
+head(nonshelter_top, 10)
+head(nonshelter_avg, 5)
+
+# find the stats for bottom 3
+
+nonshelter_top <- nonshelter_top |>
+  arrange(`Total Subawardees`)
+
+nonshelter_avg <- nonshelter_avg |>
+  arrange(avg_sub)
+
+head(nonshelter_top, 10)
+head(nonshelter_avg, 5)
+
+```
+
+## Coalitions 
+
+# Total Coalitions Funded 
+
+```{r}
+
+# coalition status is considered a type of shelter type so we can use the shelter dataframe here
+
+regional_type4 <- subawardees_coa_shelter |> 
+  group_by(
+    Region, `Shelter Type`, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n()
+  ) |>
+  filter(`Shelter Type` == "Coalition") |>
+  mutate(
+    Fy = ifelse(
+      Fy == 2024, "FY24", "FY23"
+    ),
+    Region = factor(Region, levels = regional_factor)
+  )
+
+# plot coalition highest
+plot_coalition_region <- ggplot(regional_type4, 
+                            aes(x = Region, y = `Total Subawardees`, 
+                                fill = Fy)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=comma(`Total Subawardees`)), vjust=-0.3, size=3.5, position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("FY23" = "#BCD9ED", "FY24" = "#264A64")) +
+  scale_y_continuous(labels = comma) +
+  labs(
+       x = "Region", 
+       y = "Total Coalition Subawards", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) 
+  
+plot_coalition_region
+
+```
+
+## Culturally-Specific and Underserved Subawards
+
+# Number of CS/US subawardees
+
+# total funding to CS subawardees
+
+
+```{r}
+
+# Here we want to filter to only CS/US subawardees. We are only interested in using Cultspec2 because we aren't looking at the detailed CS/US categories.
+# If interested in using the detailed CS/US categories, then Cultspec3, Cultspec4... will need to be considered.
+
+subawardees_cs <- subawardees_regional_coa |>
+  filter(CultSpec2 != ""
+  ) |>
+  group_by(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode
+  ) |>
+  mutate(
+    funding = sum(funding)
+  ) |>
+    distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    funding,
+    .keep_all = TRUE
+  ) |>
+  ungroup() 
+  
+
+# find the total number of distinct CS/US subawardees
+
+num_cult <- subawardees_cs |>
+  group_by(
+    Fy, 
+    `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode
+  ) |>
+  summarize(funding = sum(funding), .groups="drop") |>
+  group_by(Fy) |>
+  summarise(
+    `Number of CS/US Subawardees` = n(),
+    `Funding Amount`             = sum(funding),
+    .groups="drop"
+  ) |>
+  mutate(
+    `Fiscal Year` = case_when(
+      Fy == "2023" ~ "FY23",
+      Fy == "2024" ~ "FY24",
+      TRUE         ~ NA_character_
+    ),
+    `Funding Amount` = dollar(`Funding Amount`)
+  ) |>
+  select(`Fiscal Year`,`Number of CS/US Subawardees`,`Funding Amount`)
+
+format_flextable(
+  num_cult,
+  caption = "Table X. Total Funding to Culturally-Specific/Underserved Subawardees by Fiscal Year"
+)
+
+```
+
+
+# Percentage of states funding at least 1 CS/US program
+# This is across both years 
+
+```{r}
+
+num_cult <- subawardees_cs |>
+  distinct(PostalCode) |>
+  mutate(sum = n())
+
+```
+
+
+
+# States with the highest percentage of CS/US subawards
+
+
+```{r}
+
+percent_cult <- subawardees_regional_coa |>
+  group_by(PostalCode) |>
+  mutate(count = ifelse(
+    CultSpec2 != "", 1, 0
+  )) |>
+  summarize(number = n(),
+            num_cult = sum(count),
+            percent = num_cult/number) |>
+  arrange(-percent)
+
+percent_cult
+
+```
+
+# Number of CS/US subawards by region
+
+This is distinct subawardees
+
+```{r}
+
+regional_cs <- subawardees_cs |> 
+  group_by(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode
+  ) |>
+  mutate(
+    funding = sum(funding)
+  ) |>
+  distinct(
+    Fy, `Subawardee List - Subawardee Name`,
+    `Subawardee List - City`,
+    PostalCode,
+    funding,
+    .keep_all = TRUE
+  ) |>
+  group_by(
+    Region, Fy
+  ) |> 
+  summarise(
+    "Total Subawardees" = n()
+  ) |>
+  mutate(
+    Fy = ifelse(
+      Fy == 2024, "FY24", "FY23"
+    ),
+    Region = factor(Region, levels = regional_factor)
+  )
+
+# plot subawardees by region
+plot_cs <- ggplot(regional_cs, 
+                            aes(x = Region, y = `Total Subawardees`, 
+                                fill = Fy)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label=comma(`Total Subawardees`)), vjust=-0.3, size=3.5, position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("FY24" = "#BCD9ED", "FY23" = "#264A64")) +
+  scale_y_continuous(labels = comma,limits = c(0, 100)) +
+  labs(
+       x = "Region", 
+       y = "Total CS/US Subawards", 
+       fill = "Reporting Year"
+       ) +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 12, hjust = 0.5),
+    plot.subtitle = element_text(size = 16, hjust = 0.5),
+    axis.title.x = element_text(size = 16),
+    axis.title.y = element_text(size = 16),
+    axis.text.x = element_text(angle = 45, hjust = 1)
+  ) 
+  
+plot_cs
+
+```
+
+## APPENDIX
+
+# Table: Showing all Subawardee's that received funding in each FY. 
+# Note: Blank entries indicate funding status is unconfirmed. To confirm funding status as "Funded" or "Not Funded", would need to consider whether the PPR for the state was submitted in the given FY.
+
+```{r}
+
+subawardee_list <- subawardees_cs %>%
+  select(
+    Subawardee = `Subawardee List - Subawardee Name`,
+    City       = `Subawardee List - City`,
+    State      = PostalCode,
+    Fy,
+    funding
+  ) %>%
+  
+  # apply name fixes
+  mutate(
+    Subawardee = case_when(
+      Subawardee == "Hogar Ruth" ~ "Hogar Ruth para Mujeres Maltratadas",
+      Subawardee == "Hogar la Piedad" ~ "Hogar la Piedad- Fundesco",
+      Subawardee == "Institute for Individual, group and Organizational Development,AFANA" ~ "Institute for Individual group and Organizational Development, AFANA",
+      Subawardee == "Instituto del Hogar Celia & Harris Bunker" ~ "Instituto del Hogar Celia & Harris Bunker, Inc.",
+      Subawardee == "La casa de Todos" ~ "La Casa de Todos",
+      Subawardee == "Oficina para la promocion y el desarrollo Humano, Inc." ~ "Oficina para la promoción y el Desarrollo Humano, Inc",
+      Subawardee == "School of Medicine" ~ "School of Medicine of Ponce",
+      Subawardee == "Municipio de Caguas" ~ "Municipio Autonomo de Caguas",
+      Subawardee == "Municipio de Cidra" ~ "Municipio Autonomo de Cidra",
+      Subawardee == "Municipio de Coamo" ~ "Municipio Autonomo de Coamo",
+      TRUE ~ Subawardee
+    ),
+    # turn the numeric funding into a “Funded” flag
+    Funded = ifelse(funding > 0, "Funded", "")
+  ) %>%
+  
+  # only need one row per Subawardee–City–State–Fy–Funded
+  distinct(Subawardee, City, State, Fy, Funded) %>%
+  
+  # pivot to get one column per fiscal year
+  pivot_wider(
+    names_from  = Fy,
+    values_from = Funded,
+    values_fill = list(Funded = "")
+  ) %>%
+  
+  # rename FY columns
+  rename(
+    FY23 = `2023`,
+    FY24 = `2024`
+  ) %>%
+  
+  # sort 
+  arrange(State, Subawardee, City)
+
+format_flextable(
+  subawardee_list,
+  caption = "Table X. All Culturally-Specific/Underserved Subawardees, FY23–FY24"
+)
+
+
+```
+
+# Table: Amount of funding [$] for each coalition subawardee
+
+```{r}
+
+coalition_subawardees <- subawardees_coa_shelter |>
+  filter(`Shelter Type` == "Coalition") |>
+  select(
+    PostalCode,
+    Fy,
+    coalition,
+    funding
+    ) |>
+  rename(
+    "name" = coalition
+  ) |>
+  arrange(PostalCode) |>
+  mutate(
+    Fy = ifelse(
+      Fy == 2023, "FY23", "FY24"
+    ),
+    funding = dollar(funding)
+  ) |>
+  ungroup() |>
+  select(-c(PostalCode)) |>
+  pivot_wider(
+    names_from = Fy,
+    values_from = funding,
+    values_fill = "$0"
+  ) |>
+  rename(
+    "FVPSA State/Territory Funded Statewide Domestic Violence Coalition" = name
+  ) |>
+  select(
+    `FVPSA State/Territory Funded Statewide Domestic Violence Coalition`,
+    FY23,
+    FY24
+  )
+
+format_flextable(coalition_subawardees, caption = "Table X. FVPSA Funded Statewide Coalitions Through State Formula Grants")
+
+```
+
+# States and reporting status
+
+# PPR submission status by fiscal year and state
+
+```{r}
+
+# find expected states
+exp <- unique(coalitions$state)
+
+expected_states <- stack(list(
+  `2023` = exp,
+  `2024` = exp
+))
+
+names(expected_states) <- c("State", "Year")
+
+expected_states$Year <- as.numeric(as.character(expected_states$Year))
+
+missing_states <- expected_states |>
+  left_join(core_dat, by = c("Year", "State")) |>
+  select(State, Year, ppr_completeness) |> #, CodeTxt
+  mutate(
+    ppr_completeness = ifelse(
+      is.na(ppr_completeness), "Did not submit", ppr_completeness
+    ),
+    Year = as.character(Year)
+  )
+
+format_flextable(missing_states, caption = "FOR REFERENCE: State submission status")
+
+
+```
+
