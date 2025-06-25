@@ -121,7 +121,6 @@ def read_data(filepath_raw, filepath_crosswalk):
     subawardee_lookup = pd.read_excel(
         filepath_crosswalk, sheet_name="cultspec_subawardee"
     )
-    print(">>> cultspec headers:", subawardee_lookup.columns.tolist())
     subawardee_lookup = subawardee_lookup.drop_duplicates(subset=["SubAwdCultSpecf"])
 
     field_names_conversion = pd.read_excel(filepath_crosswalk, "crosswalk")

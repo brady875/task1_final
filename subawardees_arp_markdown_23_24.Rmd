@@ -1,0 +1,1593 @@
+---
+title: "ARP Subawardee Report"
+author: ""
+date: "`r Sys.Date()`"
+output: 
+  word_document:
+    reference_docx: !expr file.path(here::here(), "data_analysis", "briefing_report_utils", "briefing_report_template.docx")
+editor_options: 
+  chunk_output_type: console
+params:
+  report_link: ""
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE)
+knitr::opts_chunk$set(
+  message = FALSE,
+  warning = FALSE,
+  out.width = '80%',
+  fig.width = 12,
+  fig.height = 7,
+  fig.align = 'center'
+)
+
+options(scipen = 999)
+
+# ARP Subawardee Report
+
+library(dplyr)
+library(readxl)
+library(tidyr)
+library(stringr)
+library(ggplot2)
+library(tidycensus)
+library(scales)
+library(ggrepel)
+library(DT)
+library(janitor)
+library(pins)
+library(qs)
+library(webshot2)
+
+
+# Load helper functions
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "ARP",
+#     "arp_data_analysis_helper_functions.R"
+#   )
+# )
+# 
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "ARP",
+#     "arp_subawardee_helper_functions.R"
+#   )
+# )
+# 
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "briefing_report_utils",
+#     "briefing_report_flextable_functions.R"
+#   )
+# )
+
+# Load data folder
+# data_folder <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General",
+#   "Data"
+# )
+
+
+# Load helper functions
+# Update file path locations accordingly 
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis", 
+#     "ARP",
+#     "arp_data_analysis_helper_functions.R"
+#   )
+# )
+# 
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "ARP",
+#     "arp_subawardee_helper_functions.R"
+#   )
+# )
+# 
+# source(
+#   file.path(
+#     here::here(),
+#     "data_analysis",
+#     "briefing_report_utils",
+#     "briefing_report_flextable_functions.R"
+#   )
+# )
+
+# Load data folder
+# Update file path location
+# data_folder <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "Your Folder Name",
+#   "Your Data Folder"
+# )
+
+
+
+ source(
+   file.path(
+    "/Users/pursino/Desktop/git/fvpsa-data-analysis/data_analysis/briefing_report_utils/briefing_report_flextable_functions.R"
+   ))
+
+ source(
+   file.path(
+    "/Users/pursino/Desktop/git/fvpsa-data-analysis/data_analysis/ARP/arp_data_analysis_helper_functions.R"
+   ))
+
+ source(
+   file.path(
+    "/Users/pursino/Desktop/git/fvpsa-data-analysis/data_analysis/ARP/arp_subawardee_helper_functions.R"
+   ))
+
+
+ onedrive_path <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation"
+
+ data_folder <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data"
+
+
+# This reads in OLDC processed data
+version = "20250612T172919Z-def97"
+
+board <- board_folder(file.path(data_folder,
+                                "Quantitative",
+                                "Outputs"), versioned = TRUE)
+
+dat <- pin_read(board, name = "data_for_r", version = version)
+lapply(names(dat), function(name) {
+  assign(name, dat[[name]], envir = .GlobalEnv)
+})
+
+
+
+# Load funding tables
+# funding_path <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General",
+#   "Background Information and Resources",
+#   "Funding Tables"
+# )
+
+ funding_path <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Background Information and Resources/Funding Tables/Funding Tables_updated_07062024.xlsx"
+
+ funding <- read_excel(funding_path)
+
+ 
+ # Using a 2023 specific lookup file to map culturally specific values to their corresponding Cultspec categories
+ lookup_2023_path <- '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data/Quantitative/Lookup Tables/Data_Element_Crosswalk.xlsx'
+
+ cs_us_lookup_2023 <- read_excel(lookup_2023_path,
+              sheet = "cultspec_subawardee")|>
+              distinct()
+
+ 
+  # Using a 2023 specific lookup file to map culturally specific values to their corresponding Cultspec categories
+ # lookup_2023_path <- '/Users/Your_File_Path/Data_Element_Crosswalk.xlsx'
+ # 
+ # cs_us_lookup_2023 <- read_excel(lookup_2023_path,
+ #              sheet = "cultspec_subawardee")|>
+ #              distinct()
+ 
+ 
+ # funding_table <- read_xlsx(
+ #   file.path(
+ #     dirname(data_folder),
+ #     "Background Information and Resources",
+ #     "Funding Tables",
+ #     "Funding Tables_updated_07062024.xlsx"
+ #   ),
+ #   sheet = "Sheet1")
+#  Read in Sheet1 from the specified Excel file
+ 
+
+ # Load funding table
+ # Update file path accordingly
+ # funding_table <- read_xlsx(
+ #   file.path(
+ #     dirname(data_folder),
+ #     "Folder name that contains the file name in the following line",
+ #     "Funding Tables_updated_07062024.xlsx"
+ #   ),
+ #   sheet = "Sheet1")
+#  Read in Sheet1 from the specified Excel file
+
+funding_table <- readxl::read_xlsx(
+   '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Background Information and Resources/Funding Tables/Funding Tables_updated_07062024.xlsx',
+   sheet = "Sheet1"
+)
+
+
+# read in coalition mapping
+# We do not filter on State DV because we want to include State DV and State SA Coalitions
+coalitions <- read_xlsx(
+  file.path(
+    dirname(data_folder),
+    "Data",
+    "Quantitative",
+    "Lookup Tables",
+    "core_coalition_names.xlsx"
+  ), sheet = "ARP"
+)
+
+
+# read in coalition mapping
+# We do not filter on State DV because we want to include State DV and State SA Coalitions
+# coalitions <- read_xlsx(
+#   file.path(
+#     dirname(data_folder),
+#     "Data",
+#     "Folder name that contains the file name in the following line", 
+#     "core_coalition_names.xlsx"
+#   ), sheet = "ARP"
+# )
+
+# This reads in 2023 ARP subawardee data (this data came from submitted spreadsheets).
+# We had to merge in the cs_us_lookup_23 to obtain the correctly mapped CS/US categories to the 2023 data that came from spreadsheets.
+# We only include CultSpec2 because we are only interested if they were a cultspec Subawardee
+# If you want to know the specific category, you'll need to consider Cultspec3, Cultspec4...
+version_arp = "20240804T195406Z-d181b"
+subawardees_23 <- pin_read(board, name = "subawardee_arp_data", version = version_arp) |>
+  filter(year %in% c("2023")) |> # Spreadsheets were only used in 2022 and 2023
+  left_join(coalitions, by = "name") |>
+  mutate(
+    name = ifelse(!is.na(name_formal), name_formal, name),
+    state_dv = ifelse(is.na(state_dv), "N/A", state_dv),
+    shelter = ifelse(state_dv %in% c(TRUE, FALSE), "Coalition", shelter)
+  ) |>
+  select(-c("State", "name_formal","name_consol","cultspec"))|>
+  merge(cs_us_lookup_2023,all.x = T, by.x = "underserved", by.y = "SubAwdCultSpecf") |>
+  select("year","state" ,"stream", "source","name" ,"city" ,"shelter", "urban","CultSpec2","oldc_match_shelter","oldc_match_urban","match_available","state_dv")|>
+  rename("underserved" = "CultSpec2")
+
+
+
+# Extract state data
+# Combine 2023 and 2024 state data
+# We're including CARES Act because some grantees ARP subawardees under CARES
+state <- bind_rows(wide_23, wide_24) |>
+  mutate(
+    `Program Acronym` = ifelse(`Program Acronym` == "FTC6", "ARP COVID-19 Testing Supplemental", `Program Acronym`)
+  )|>
+  filter(Year %in% c(2023, 2024),  
+         `Grant Type` == "State",
+         `Program Acronym` %in% c("ARP Act","ARP COVID-19 Testing Supplemental","ARP Support Survivors of Sexual Assualt","CARES Act"))
+
+# Global variables ----
+init_report_link_row(params$report_link)
+
+# read subawardee data
+
+# Load state abbreviation table
+# state_abb <- read_xlsx(
+#   file.path(
+#     dirname(data_folder),
+#     "Background Information and Resources",
+#     "hhs_regions.xlsx"
+#   ))
+
+
+# Load state abbreviation table
+# Update file paths accordingly
+# state_abb <- read_xlsx(
+#   file.path(
+#     dirname(data_folder),
+#     "Folder name that contains the file name in the following line", 
+#     "hhs_regions.xlsx"
+#   ))
+
+
+ state_abb <- readxl::read_xlsx(
+   '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Background Information and Resources/hhs_regions.xlsx'
+ )
+
+
+# ofvps_folder <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General"
+# )
+ 
+ 
+ # Replace file path's accordingly
+ # ofvps_folder <- file.path(
+#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
+#   "ACF Office of Family Violence Prevention and Services - General"
+# )
+
+ ofvps_folder <- '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS'
+
+# Load cult_spec_list that contains CSSIRC Subrecipient information
+# cult_spec_list <- read_xlsx(
+#   file.path(
+#     dirname(ofvps_folder),
+#     "ACF Office of Family Violence Prevention and Services - General",
+#     "Task 1 Reporting",
+#     "Reports",
+#     "Data",
+#     "Data_Archive_092024",
+#     "CSSIRC Subrecipient List-Final.xlsx"
+#   ),
+#   sheet = "MITRE-master_list") |>
+#   filter(year %in% c("FY23", "FY24"))
+ 
+# Load cult_spec_list that contains CSSIRC Subrecipient information
+# Update file paths accordingly 
+# cult_spec_list <- read_xlsx(
+#   file.path(
+#     dirname(ofvps_folder),
+#     "Your OneDrive Name",
+#     "Folder name that contains the file name in the following line", 
+#     "CSSIRC Subrecipient List-Final.xlsx"
+#   ),
+#   sheet = "MITRE-master_list") |>
+#   filter(year %in% c("FY23", "FY24"))
+
+
+ cult_spec_list <- readxl::read_xlsx(
+   '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Task 1 Reporting/Reports/Data/Data_Archive_092024/CSSIRC Subrecipient List-Final.xlsx',
+   sheet = "MITRE-master_list"
+ ) |>
+   dplyr::filter(year %in% c(2023, 2024))
+
+```
+
+
+
+### Data Version Used:
+# Note: 06/12 data was actually pulled on 04/28
+
+
+
+```{r}
+
+(pins::pin_meta(board, "data_for_r", version = pins::pin_versions(board, "data_for_r") |> 
+  filter(created == max(created)) |> pull(version)))$description
+
+```
+
+
+
+```{r}
+# We set underserved to cultspec2 because we are only interested in whether the subawardee was culturally specific or not. 
+# If you are interested in the specific category of culturally specific, you'll need to consider cultspec3, cultspec4...
+
+stream_mapping <- c(
+  "ARP Sexual Assault Supplemental" = "SA",
+  "ARP DV Supplemental" = "DV",
+  "ARP COVID-19 Testing Supplemental" = "Covid",
+ "FVPSA Core Annual Funding" = "Core",
+ "Disaster Assistance Supplemental" = "Disaster"
+)
+
+
+
+subawardees_24 <- 
+  sub24 |>
+  select(
+    "year" = "Fy",
+    "state" = "PostalCode",
+    "city" = "Subawardee List - City",
+    "name" = "Subawardee List - Subawardee Name",
+    "urban" = "Rural Designation",
+    "funding_type_raw" = "Subawardee - FVPSA Funding Type",
+    "shelter" = "Shelter Type",
+    "underserved" = "CultSpec2",
+    "ProgAcronym"
+  )  |>
+  left_join(coalitions, by = c("name" = "name")) |>
+  mutate(
+    "source" = "oldc_24",
+    "oldc_match_shelter" = NA,
+    "oldc_match_urban" = NA,
+    "match_available" = NA
+  )|>
+  separate_rows(funding_type_raw, sep = "\\|") |> 
+  mutate(
+    stream = stream_mapping[trimws(funding_type_raw)],# trim whitespace and map
+    shelter = ifelse(state_dv %in% c(TRUE, FALSE), "Coalition", shelter),
+    name = ifelse(!is.na(name_formal), name_formal, name)
+  ) 
+
+# Fix funding stream info to take into account program acronym
+subawardees_24$stream[is.na(subawardees_24$funding_type_raw) & (subawardees_24$ProgAcronym %in% c("ARP Act","ARP COVID-19 Testing Supplemental", "FSC6", "ARP Support Survivors of Sexual Assualt"))] <- "ARP Unspecified"
+subawardees_24$stream[is.na(subawardees_24$funding_type_raw) & (subawardees_24$ProgAcronym %in% c("FVDR"))] <- "Disaster Unspecified"
+subawardees_24$stream[is.na(subawardees_24$funding_type_raw) & (subawardees_24$ProgAcronym %in% c("Core FVPSA"))] <- "Core Unspecified"
+subawardees_24$stream[is.na(subawardees_24$funding_type_raw) & (subawardees_24$ProgAcronym %in% c("CARES Act"))] <- "CARES Unspecified"
+
+
+subawardees_23$ProgAcronym <- "ARP Act"
+
+subawardees_24 <- subawardees_24|> 
+  select(colnames(subawardees_23))
+
+subawardees_arp <- rbind(subawardees_23, subawardees_24) |> 
+  filter(
+    stream %in% c("ARP Unspecified", "Covid", "SA", "DV"),
+    !is.na(name) # Exclude rows where name is NA
+  )|> 
+  distinct() # sometimes a coalition submits multiple PPR's, we only include distinct subawardee data.
+
+
+```
+
+
+
+## Funding Allocation
+
+### Funding amounts 
+
+#### The number of subawardees in 2023 and 2024 (by covid, dv, sa)
+
+```{r}
+# logic to count each subawardee once per year, even if they appear in multiple streams
+distinct_sub <- subawardees_arp |>
+  distinct(year, state, stream, name, city)
+
+number_of_sub <- distinct_sub |>
+  group_by(year, stream) |>
+  summarize(n = n(), .groups = "drop")
+
+format_flextable(number_of_sub, caption = "FOR REFERENCE: Number of distinct subawardees in 2023 and 2024, by stream and year")
+
+
+```
+
+
+
+
+#### Number of PPRs submitted
+
+```{r}
+
+submitted_subawardee_pprs <- subawardees_arp |>
+  select(year,state, ProgAcronym)|>
+  mutate(
+    has_arp_subawardees = "Yes"
+  )|>
+  distinct()
+
+
+submitted_subawardee_pprs$year <- as.numeric(submitted_subawardee_pprs$year)
+
+
+expected_states_subawardee <- crossing(state_abb, Year = c(2023, 2024), `ProgAcronym` = unique(submitted_subawardee_pprs$`ProgAcronym`)) |>
+  left_join(submitted_subawardee_pprs, by = c("State Abb" = "state", "Year" = "year", "ProgAcronym" = "ProgAcronym")) |>
+  filter(!(Year == 2023 & `ProgAcronym` != "ARP Act"))|>
+  mutate(
+    has_arp_subawardees = ifelse(is.na(has_arp_subawardees), "No", has_arp_subawardees)
+  )
+
+# Count number of PPRs submitted that have ARP subawardees listed
+count_ppr_subawardee <- expected_states_subawardee |>
+  group_by(Year,ProgAcronym, has_arp_subawardees) |>
+  filter(!ProgAcronym %in% c("Core FVPSA")) |>
+  summarize(n = n(), .groups = "drop")
+
+
+# Expand state_abb to include both 2023 and 2024
+expected_states <- expected_states_subawardee |>
+  left_join(state, by = c("State Abb" = "State", "Year" = "Year", "ProgAcronym" = "Program Acronym")) |>
+  mutate(
+    ppr_completeness = ifelse(is.na(ppr_completeness), "Did Not Submit", ppr_completeness),
+    ppr_completeness = ifelse(ppr_completeness == "Empty", "Complete", ppr_completeness)
+  ) |>
+  select(colnames(expected_states_subawardee), CodeTxt, ppr_completeness)
+
+
+
+# Count number of PPRs submitted for each completeness category
+count_ppr <- expected_states |>
+  group_by(Year,ProgAcronym, ppr_completeness) |>
+  summarize(n = n(), .groups = "drop")|>
+  filter(!ProgAcronym %in% c("CARES Act","Core FVPSA"))
+
+
+
+# Format table output
+format_flextable(count_ppr, caption = "FOR REFERENCE: Number of PPRs submitted in FY23 and FY24,
+                 MA submitted all of their ARP subawardees under their Cares PPR submission. SD submitted some ARP data under their CARES submission.NH, MO, MS, ID, SD, ND submitted some ARP data under their Core PPR submission.")
+
+
+subawardees_arp_check <- subawardees_arp|>
+  filter(`ProgAcronym` == "Core FVPSA")|>
+  select("state")|>
+  distinct()
+
+
+format_flextable(count_ppr_subawardee, caption = "FOR REFERENCE: Number of PPRs with submitted ARP Subawardees in FY23 and FY24. Note: Two States submitted ARP Subawardees under CARES Act and six States submitted Subawardees under Core FVPSA.")
+
+
+```
+
+#### Table 1. Summary of Awards to States and Territories Grant Recipients.
+
+```{r}
+
+# Subawardee counts
+tot_subawardees <- distinct_sub |>
+  filter(year %in% c(2023, 2024)) |>
+  group_by(year, stream) |>
+  summarize(total = n(), .groups = "drop") |>
+  mutate(
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental Funding",
+      stream == "SA" ~ "ARP Grants to Support Survivors of Sexual Assault",
+      stream == "Covid" ~ "ARP COVID-19 Testing, Vaccines, and Mobile Health Units",
+      stream == "ARP Unspecified" ~ "ARP Unspecified"
+    ),
+    total = comma(total),
+    `Funding Metric` = paste0("Number of subawardees, FY", year)
+  ) |>
+  select(`Funding Metric`, stream, total) |>
+  pivot_wider(names_from = stream, values_from = total)
+
+
+# Total funding 
+tot_funding <- funding_table |>
+  filter(
+    `Grantee Type` == "State",
+    `Grant Program Type` %in% c(
+      "Sexual Assault Supplemental",
+      "COVID-19 Testing Vaccines & Mobile Health",
+      "ARP Domestic Violence Supplemental"
+    )
+  ) |>
+  mutate(
+    `Grant Program Type` = case_when(
+      `Grant Program Type` == "ARP Domestic Violence Supplemental" ~ "ARP Supplemental Funding",
+      `Grant Program Type` == "Sexual Assault Supplemental" ~ "ARP Grants to Support Survivors of Sexual Assault",
+      `Grant Program Type` == "COVID-19 Testing Vaccines & Mobile Health" ~ "ARP COVID-19 Testing, Vaccines, and Mobile Health Units"
+    )
+  ) |>
+  group_by(`Grant Program Type`) |>
+  summarize(amount = sum(Amount, na.rm = TRUE)) |>
+  mutate(amount = dollar(amount)) |>
+  pivot_wider(names_from = `Grant Program Type`, values_from = amount) |>
+  mutate(`Funding Metric` = "Total funding to grant recipients")
+
+
+# Combine and display table
+tot_funding_combined <- bind_rows(tot_funding, tot_subawardees) |>
+  select(
+    `Funding Metric`,
+    `ARP COVID-19 Testing, Vaccines, and Mobile Health Units`,
+    `ARP Grants to Support Survivors of Sexual Assault`,
+    `ARP Supplemental Funding`,
+    `ARP Unspecified`
+  )
+
+format_flextable(
+  tot_funding_combined,
+  caption = "Table 1. Summary of American Rescue Plan Act (ARP) awards to states and territories grant recipients and subawardees, FY23 and FY24. Funding totals are derived from funding table values not PPR's. The number of Subawardees comes from PPR's."
+)
+
+
+
+```
+
+
+
+#### Amount of funding expected to be given to subawardees
+
+## Subaward Types
+
+```{r}
+
+region_df <- distinct_sub |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  filter(stream %in% c("DV", "SA", "Covid","ARP Unspecified"))  
+
+
+stream_labels <- c(
+  DV = "Supplemental",
+  SA = "Sexual Assault",
+  Covid = "COVID-19",
+  `ARP Unspecified` = "ARP Unspecified"
+)
+
+region_df <- region_df |>
+  mutate(stream_label = stream_labels[stream])
+
+
+# count and reshape by stream
+counts <- region_df |>
+  count(year, `HHS Region`, stream_label) |>
+  pivot_wider(
+    names_from = stream_label,
+    values_from = n,
+    values_fill = list(
+      Supplemental = 0,
+      `Sexual Assault` = 0,
+      `COVID-19` = 0,
+      `ARP Unspecified` = 0
+    )
+  ) |>
+  arrange(year, `HHS Region`)
+
+# create totals 
+totals <- counts |>
+  group_by(year) |>
+  summarize(
+    Supplemental = sum(Supplemental),
+    `Sexual Assault` = sum(`Sexual Assault`),
+    `COVID-19` = sum(`COVID-19`),
+    `ARP Unspecified` = sum(`ARP Unspecified`),
+    .groups = "drop"
+  ) |>
+  mutate(`HHS Region` = "Total") |>
+  select(year, `HHS Region`, everything())
+
+# Combine both and mark totals
+counts <- counts |> mutate(is_total = FALSE)
+totals <- totals |> mutate(is_total = TRUE)
+
+
+combined <- bind_rows(counts, totals)
+
+# Order HHS Regions
+combined <- combined |>
+  mutate(`HHS Region` = factor(`HHS Region`,
+    levels = c(paste0("Region ", 1:10), "Total"),
+    ordered = TRUE
+  ))
+
+combined_sorted <- combined |>
+  arrange(year, `HHS Region`)
+
+# Drop helper column
+final_table <- combined_sorted |> select(-is_total)
+
+format_flextable(
+  final_table,
+  caption = "Number of FVPSA ARP subawardees by HHS Region, stream, and fiscal year"
+)
+
+
+```
+
+
+### Service Types
+
+#### Table 2. Type of FVPSA State and Territory Subawardees by HHS Region, Service Type (funding type).
+
+(asterix) The “Regional Total” column indicates unique subawardees per HHS region and service type. This number may not align with other column totals due to subawardees being classified under several service types.
+
+
+```{r}
+# a dataframe that has distinct subawardees: if there is more than one shelter type for a subawardee, we keep it distinct. If there is more than one urban type and the same shelter type, we remove those cases (and concatenate the urban status. This isn't necessary but helps to check)
+
+# For 2023 data, underserved can include multiple categories. For 2024 data, recall we set underserved to be Cultspec2 because we only care about whether they were a CS/US subawardee or not, we are not interested in the specific category.
+# If you are interested in the specific category, you must consider Cultspec3, Cultspec4...
+
+distinct_shelter <- subawardees_arp |>
+  group_by(year, state, stream, name, city, shelter, underserved) |>
+  mutate(urban = paste(unique(urban), collapse = ", "),
+         underserved = paste(unique(underserved), collapse = "|")) |>
+  ungroup() |>
+  distinct(year, state, stream, name, city, shelter, urban, underserved, .keep_all = TRUE) 
+
+
+# Generate stream-wise summaries by year using getsubawardees()
+# FY23
+sa_23 <- getsubawardees("SA", distinct_shelter, selected_year = 2023)
+covid_23 <- getsubawardees("Covid", distinct_shelter, selected_year = 2023)
+dv_23 <- getsubawardees("DV", distinct_shelter, selected_year = 2023)
+
+# FY24
+sa_24 <- getsubawardees("SA", distinct_shelter, selected_year = 2024)
+covid_24 <- getsubawardees("Covid", distinct_shelter, selected_year = 2024)
+dv_24 <- getsubawardees("DV", distinct_shelter, selected_year = 2024)
+arp_unspecified_24 <- getsubawardees("ARP Unspecified", distinct_shelter, selected_year = 2024)
+
+
+
+
+#  Bind everything together
+shelter_final <- bind_rows(
+  covid_23, sa_23, dv_23,
+  covid_24, sa_24, dv_24,arp_unspecified_24
+) |>
+  mutate(
+    region = case_when(
+      region == "SA" ~ "ARP Grants to Support Survivors of Sexual Assault",
+      region == "Covid" ~ "ARP COVID-19 Testing, Vaccines, and Mobile Health Units",
+      region == "DV" ~ "ARP Supplemental Funding",
+      region == "ARP Unspecified" ~ "ARP Unspecified",
+      region == "Blank" ~ NA_character_,
+      TRUE ~ region
+    )
+  ) |>
+  rename(
+    "Region" = region,
+    "Region Total*" = total,
+    "Fiscal Year" = year
+  ) |>
+  relocate(`Fiscal Year`, .before = Region)
+
+# Format table
+format_flextable(
+  shelter_final,
+  caption = "Table 2. Type of FVPSA ARP state and territory subawardees by HHS region, service type, and fiscal year."
+)
+
+
+```
+
+### Rural Designation
+
+#### Table 3. Type of FVPSA State and Territory Subawardees by HHS Region, Rural Designation (funding type)
+
+(asterix) The “Regional Total” column indicates unique subawardees per HHS region and rural-urban classification. This number may not align with other column totals due to subawardees being classified under several rural-urban classification.
+
+
+```{r}
+
+# a dataframe that has distinct subawardees: if there is more than one rural type for a subawardee, we keep it distinct. If there is more than one shelter type and the same rural type, we remove those cases (and concatenate the shelter status. This isn't necessary but helps to check)
+
+# For 2023 data, underserved can include multiple categories. For 2024 data, recall we set underserved to be Cultspec2 because we only care about whether they were a CS/US subawardee or not, we are not interested in the specific category.
+# If you are interested in the specific category, you must consider Cultspec3, Cultspec4...
+
+# Define all HHS regions
+all_regions <- paste("Region", 1:10)
+
+# do the same for urban
+distinct_urban <- subawardees_arp |>
+  group_by(year, state, stream, name, city, urban, underserved) |>
+  mutate(shelter = paste(unique(shelter), collapse = ", "),
+         underserved = paste(unique(underserved), collapse = "|")) |>
+  ungroup() |>
+  distinct(year, state, stream, name, city, shelter, urban, underserved, .keep_all = TRUE) 
+
+
+
+# FY23
+sa_23u <- getsubawardees_urban("SA", distinct_urban, selected_year = 2023)
+
+covid_23u <- getsubawardees_urban("Covid", distinct_urban, selected_year = 2023)
+
+dv_23u <- getsubawardees_urban("DV", distinct_urban, selected_year = 2023)
+
+# FY24
+sa_24u <- getsubawardees_urban("SA", distinct_urban, selected_year = 2024)
+
+covid_24u <- getsubawardees_urban("Covid", distinct_urban, selected_year = 2024)
+
+dv_24u <- getsubawardees_urban("DV", distinct_urban, selected_year = 2024)
+
+arp_unspecified_24u <- getsubawardees_urban("ARP Unspecified", distinct_urban, selected_year = 2024)
+
+
+# Bind everything together
+urban_final <- bind_rows(
+  covid_23u, sa_23u, dv_23u,
+  covid_24u, sa_24u, dv_24u,arp_unspecified_24u
+) |>
+  mutate(
+    region = case_when(
+      region == "SA" ~ "ARP Grants to Support Survivors of Sexual Assault",
+      region == "Covid" ~ "ARP COVID-19 Testing, Vaccines, and Mobile Health Units",
+      region == "DV" ~ "ARP Supplemental Funding",
+      region == "ARP Unspecified" ~ "ARP Unspecified",
+      region == "Blank" ~ NA_character_,
+      TRUE ~ region
+    )
+  ) |>
+  rename(
+    "Region" = region,
+    "Region Total*" = total,
+    "Fiscal Year" = year
+  ) |>
+  relocate(`Fiscal Year`, .before = Region)
+
+
+format_flextable(
+  urban_final,
+  caption = "Type of FVPSA ARP state and territory subawardees by HHS region, rural-urban classification, and fiscal year."
+)
+
+
+
+```
+
+## Subaward Service Types
+
+### Shelter Subawardees
+
+#### Figure 1. Number of FVPSA ARP state and territory shelter subawardees by HHS region.
+
+
+```{r}
+
+# write regional list
+regional_factor = c("Region 1",
+                    "Region 2",
+                    "Region 3",
+                    "Region 4",
+                    "Region 5",
+                    "Region 6",
+                    "Region 7",
+                    "Region 8",
+                    "Region 9",
+                    "Region 10")
+
+distinct_shelter_23 <- distinct_shelter |> filter(year == 2023)
+distinct_shelter_24 <- distinct_shelter |> filter(year == 2024)
+
+# FY23: Only DV, SA, and Covid
+chart_subawardees_23 <- distinct_shelter_23 |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  filter(shelter == "Shelter") |>
+  group_by(stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19",
+      TRUE ~ NA_character_
+    ),
+    stream = factor(stream, levels = c("ARP COVID-19", "ARP SA", "ARP Supplemental")),
+    `HHS Region` = factor(`HHS Region`, levels = paste("Region", 1:10))
+  ) |>
+  filter(!is.na(stream))
+
+
+# FY24: Includes DV, SA, Covid, and ARP Unspecified
+chart_subawardees_24 <- distinct_shelter_24 |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  filter(shelter == "Shelter") |>
+  group_by(stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19",
+      stream == "ARP Unspecified" ~ "ARP Unspecified",
+      TRUE ~ NA_character_
+    ),
+    stream = factor(stream, levels = c("ARP COVID-19", "ARP SA", "ARP Supplemental","ARP Unspecified")),
+    `HHS Region` = factor(`HHS Region`, levels = paste("Region", 1:10))
+  ) |>
+  filter(!is.na(stream))
+
+# FY23 Plot
+ggplot(chart_subawardees_23, aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 4.5, position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c("ARP COVID-19" = "#A6D8D2", "ARP SA" = "#407972", "ARP Supplemental" = "#779CB5")) +
+  scale_y_continuous(labels = comma, limits = c(0, 150), breaks = seq(0, 150, 50)) + 
+  labs(
+    x = "Region",
+    y = "Total Subawardees",
+    fill = "Funding Source",
+    title = "Figure 1. FY23: Number of FVPSA ARP state and territory shelter subawardees by HHS region"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
+    axis.text.y = element_text(size = 14),                        
+    axis.title.x = element_text(size = 20),                       
+    axis.title.y = element_text(size = 20),                       
+    plot.title = element_text(size = 20, face = "bold"),
+    plot.subtitle = element_text(size = 18)
+  )
+
+# FY24 Plot
+ggplot(chart_subawardees_24, aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 4.5, position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c(
+    "ARP COVID-19" = "#A6D8D2", 
+    "ARP SA" = "#407972", 
+    "ARP Supplemental" = "#779CB5",
+    "ARP Unspecified" = "#4D4D4D"
+  )) +
+  scale_y_continuous(labels = comma, limits = c(0, 150), breaks = seq(0, 150, 50)) + 
+  labs(
+    x = "Region",
+    y = "Total Subawardees",
+    fill = "Funding Source",
+    title = "Figure 2. FY24: Number of FVPSA ARP state and territory shelter subawardees by HHS region"
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "bottom",
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
+    axis.text.y = element_text(size = 14),                        
+    axis.title.x = element_text(size = 20),                       
+    axis.title.y = element_text(size = 20),                       
+    plot.title = element_text(size = 20, face = "bold"),
+    plot.subtitle = element_text(size = 18)
+  )
+
+```
+
+
+
+### Non-shelter Subawardees
+
+#### Figure 2. Number of FVPSA ARP state and territory shelter subawardees by HHS region.
+
+
+```{r}
+
+# FY23 Plot
+chart_subawardees_non_23 <- distinct_shelter |>
+  filter(year == 2023, shelter == "Non-shelter") |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  group_by(stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    `HHS Region` = factor(`HHS Region`, levels = regional_factor),
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19"
+    ),
+    stream = factor(stream, levels = c("ARP COVID-19", "ARP SA", "ARP Supplemental"))
+  )
+
+plot_nonshelter_region_23 <- ggplot(chart_subawardees_non_23, 
+                                    aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 4.5,
+            position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c(
+    "ARP COVID-19" = "#A6D8D2",
+    "ARP SA" = "#407972",
+    "ARP Supplemental" = "#779CB5"
+  )) +
+  scale_y_continuous(labels = comma,limits = c(0, 100)) +
+  labs(
+    title = "Figure X. Number of FY23 FVPSA ARP state and territory non-shelter subawardees by HHS region",
+    x = "Region",
+    y = "Total Subawardees",
+    fill = "Funding Source"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
+    axis.text.y = element_text(size = 14)                         
+  )
+
+# FY24 Plot 
+chart_subawardees_non_24 <- distinct_shelter |>
+  filter(year == 2024, shelter == "Non-shelter") |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  group_by(stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    `HHS Region` = factor(`HHS Region`, levels = regional_factor),
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19",
+      stream == "ARP Unspecified" ~ "ARP Unspecified"
+    ),
+    stream = factor(stream, levels = c(
+      "ARP COVID-19", "ARP SA", "ARP Supplemental", "ARP Unspecified"
+    ))
+  )
+
+plot_nonshelter_region_24 <- ggplot(chart_subawardees_non_24, 
+                                    aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 4.5,
+            position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c(
+    "ARP COVID-19" = "#A6D8D2",
+    "ARP SA" = "#407972",
+    "ARP Supplemental" = "#779CB5",
+    "ARP Unspecified" = "#4D4D4D"
+  )) +
+  scale_y_continuous(labels = comma,limits = c(0, 100)) +
+  labs(
+    title = "Figure Y. Number of FY24 FVPSA ARP state and territory non-shelter subawardees by HHS region",
+    x = "Region",
+    y = "Total Subawardees",
+    fill = "Funding Source"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),   
+    axis.text.y = element_text(size = 14)                         
+  )
+
+print(plot_nonshelter_region_23)
+print(plot_nonshelter_region_24)
+
+
+```
+
+
+### Coalition Subawardees
+
+#### Figure 3. Number of FVPSA ARP state and territory coalition subawardees by HHS region.
+
+
+```{r}
+# Define all possible region levels
+regional_levels <- paste("Region", 1:10)
+
+# Define stream labels for both years
+streams_23 <- c("ARP COVID-19", "ARP SA", "ARP Supplemental")
+streams_24 <- c("ARP COVID-19", "ARP SA", "ARP Supplemental","ARP Unspecified") 
+
+# FY23 Coalition Plot
+chart_subawardees_coa_23 <- distinct_shelter |>
+  filter(year == 2023, shelter == "Coalition") |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  group_by(stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19"
+    )
+  ) |>
+  complete(stream = streams_23, `HHS Region` = regional_levels, fill = list(n = 0)) |>
+  mutate(
+    `HHS Region` = factor(`HHS Region`, levels = regional_levels),
+    stream = factor(stream, levels = streams_23)
+  )
+
+plot_coalition_region_23 <- ggplot(chart_subawardees_coa_23, 
+                                   aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 5.5,
+            position = position_dodge(width = 0.8)) +
+  scale_fill_manual(values = c(
+    "ARP COVID-19" = "#A6D8D2",
+    "ARP SA" = "#407972",
+    "ARP Supplemental" = "#779CB5"
+  )) +
+  scale_y_continuous(labels = comma,limits = c(0, 5), expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    title = "Figure X. Number of FY23 FVPSA ARP coalition subawardees by HHS region",
+    x = "Region", 
+    y = "Total Subawardees", 
+    fill = "Funding Source"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  # Added size for x-axis text
+    axis.text.y = element_text(size = 14),                        # Added size for y-axis text
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+  )
+
+
+# FY24 Coalition Plot
+chart_subawardees_coa_24 <- distinct_shelter |>
+  filter(year == 2024, shelter == "Coalition") |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  group_by(stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19",
+      stream == "ARP Unspecified" ~ "ARP Unspecified"
+    )
+  ) |>
+  complete(stream = streams_24, `HHS Region` = regional_levels, fill = list(n = 0)) |>
+  mutate(
+    `HHS Region` = factor(`HHS Region`, levels = regional_levels),
+    stream = factor(stream, levels = streams_24)
+  )
+
+plot_coalition_region_24 <- ggplot(chart_subawardees_coa_24, 
+                                   aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 5.5,
+            position = position_dodge(width = 0.8)) +
+  scale_fill_manual(values = c(
+    "ARP COVID-19" = "#A6D8D2",
+    "ARP SA" = "#407972",
+    "ARP Supplemental" = "#779CB5",
+    "ARP Unspecified" = "#4D4D4D"
+  )) +
+  scale_y_continuous(labels = comma,limits = c(0, 5), expand = expansion(mult = c(0, 0.1))) +
+  labs(
+    title = "Figure Y. Number of FY24 FVPSA ARP coalition subawardees by HHS region",
+    x = "Region", 
+    y = "Total Subawardees", 
+    fill = "Funding Source"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  # Added size for x-axis text
+    axis.text.y = element_text(size = 14),                        # Added size for y-axis text
+    plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
+  )
+
+# Show plots
+print(plot_coalition_region_23)
+print(plot_coalition_region_24)
+
+
+```
+
+
+## Culturally Specific and Underserved Subawards (CS/US)
+
+#### Table 7. Total subawardees serving culturally and linguistically specific populations by ARP funding source, FY23 and FY24.
+
+The total below does not include "Other" cases, only underserved groups that are specifically identified as a OFVPS concern. 
+
+```{r}
+
+distinct_underserved <- subawardees_arp |>
+  filter(year %in% c(2023,2024)) |>
+  distinct(year, state, stream, name, city, underserved) |>
+  group_by(year, state, stream, name, city) |>
+  mutate(cultspec = paste(unique(underserved), collapse = "***")) |>
+  ungroup() |>
+  distinct(year, state, stream, name, city, cultspec, .keep_all = TRUE)
+
+# Cult_spec_list refers to CSSIRC subrecipients, this list is provided by OFVPS
+# We set cult_spec to General to indicate these are all culturally specific grantees
+# If you care about the specific category, you can update the lookup table and code
+
+distinct_underserved1 <- cult_spec_list |>
+  mutate(
+    stream = "CultSpec",
+    cultspec = "General", 
+    year = as.character(year),
+    city = NA_character_
+  ) |>
+  rename(name = subawardee) |>
+  select(year, state, stream, name, city, cultspec) |>
+  bind_rows(distinct_underserved)
+
+total_underserved <- distinct_underserved1 |>
+  filter(!cultspec %in% c("None", "Other","","***Other")) |>
+  group_by(year, stream) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    stream = factor(stream, levels = c("Covid", "SA", "DV", "ARP Unspecified", "CultSpec"))
+  ) |>
+  arrange(stream, year) |>
+  mutate(
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental Funding",
+      stream == "SA" ~ "ARP Grants to Support Survivors of Sexual Assault",
+      stream == "Covid" ~ "ARP COVID-19 Testing, Vaccines, and Mobile Health Units",
+      stream == "ARP Unspecified" ~ "ARP Unspecified",
+      stream == "CultSpec" ~ "ARP Culturally Specific"
+    )
+  ) |>
+  rename(
+    "Funding Source" = stream,
+    "Fiscal Year" = year,
+    "Number of CS/US Subawardees" = n
+  )
+
+format_flextable(
+  total_underserved,
+  caption = "Table 7. Number of subawardees serving culturally and linguistically specific populations by ARP funding source and fiscal year."
+)
+
+```
+
+
+
+### Table 7: Update to obtain Unique CS/US Subawardees by FY
+```{r}
+
+distinct_underserved_cs_unique <- subawardees_arp |>
+  filter(year %in% c(2023,2024)) |>
+  distinct(year, state, name, city, underserved) |>
+  group_by(year, state, name, city) |>
+  mutate(cultspec = paste(unique(underserved), collapse = "***")) |>
+  ungroup() |>
+  distinct(year, state, name, city, cultspec, .keep_all = TRUE)
+
+# Cult_spec_list refers to CSSIRC subrecipients, this list is provided by OFVPS
+# We set cult_spec to General to indicate these are all culturally specific grantees
+# If you care about the specific category, you can update the lookup table and code
+
+distinct_underserved_cs_unique1 <- cult_spec_list |>
+  mutate(
+    cultspec = "General", 
+    year = as.character(year),
+    city = NA_character_
+  ) |>
+  rename(name = subawardee) |>
+  select(year, state, name, city, cultspec) |>
+  bind_rows(distinct_underserved_cs_unique)
+
+total_underserved_cs_unique <- distinct_underserved_cs_unique1 |>
+  filter(!cultspec %in% c("None", "Other","","***Other")) |>
+  group_by(year) |>
+  summarize(n = n(), .groups = "drop") |>
+  arrange(year) |>
+  rename(
+    "Fiscal Year" = year,
+    "Number of CS/US Subawardees" = n
+  )
+
+format_flextable(
+  total_underserved_cs_unique,
+  caption = "Table 7 UPDATE. Number of subawardees serving culturally and linguistically specific populations by fiscal year."
+)
+
+```
+
+
+
+
+#### Figure 6. Total FVPSA ARP state and territory subawardees serving CS/US clients by HHS region.
+
+Subawardees may serve multiple CS/US populations and these populations are not mutually exclusive.
+
+
+```{r}
+
+# Define expected funding streams and regions for all years
+cult_expecte <- expand.grid(
+  stream = "ARP Culturally Specific",
+  `HHS Region` = regional_factor,
+  year = c(2023, 2024)
+)
+
+# Create a table of all possible funding stream, HHS Region, and Year combinations as a template for the final plot
+expected_cat_all <- expand.grid(
+  stream = c("ARP COVID-19", "ARP SA", "ARP Supplemental", "ARP Unspecified"),
+  `HHS Region` = regional_factor,
+  year = c(2023, 2024)
+)
+
+full_expectation <- bind_rows(cult_expecte, expected_cat_all)
+
+# Recalculate actual data
+by_cat_underserved_graph <- distinct_underserved1 |>
+  filter(!cultspec %in% c("None", "Other", "", "***Other")) |>
+  left_join(state_abb, by = c("state" = "State Abb")) |>
+  group_by(year, stream, `HHS Region`) |>
+  summarize(n = n(), .groups = "drop") |>
+  mutate(
+    `HHS Region` = factor(`HHS Region`, levels = regional_factor),
+    stream = case_when(
+      stream == "DV" ~ "ARP Supplemental",
+      stream == "SA" ~ "ARP SA",
+      stream == "Covid" ~ "ARP COVID-19",
+      stream == "CultSpec" ~ "ARP Culturally Specific",
+      stream == "ARP Unspecified" ~ "ARP Unspecified",
+      TRUE ~ stream
+    ),
+    stream = factor(stream, levels = c(
+      "ARP COVID-19", "ARP SA", "ARP Supplemental", "ARP Unspecified", "ARP Culturally Specific"))
+  )
+
+
+by_cat_underserved_graph <- by_cat_underserved_graph |>
+  mutate(year = as.numeric(year))
+
+# Fill in 0s for missing combinations
+by_cat_underserved_graph2 <- full_expectation |>
+  left_join(by_cat_underserved_graph, by = c("stream", "HHS Region", "year")) |>
+  mutate(n = ifelse(is.na(n), 0, n))
+
+# Plot CS/US subawardees by region, faceted by year
+plot_csus <- ggplot(by_cat_underserved_graph2, 
+                    aes(x = `HHS Region`, y = n, fill = stream)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.9)) +
+  geom_text(aes(label = comma(n)), vjust = -0.3, size = 5.5, 
+            position = position_dodge(width = 0.9)) +
+  scale_fill_manual(values = c(
+    "ARP COVID-19" = "#A6D8D2", 
+    "ARP SA" = "#407972", 
+    "ARP Supplemental" = "#779CB5", 
+    "ARP Unspecified" = "#4D4D4D",
+    "ARP Culturally Specific" = "#E29F4D"
+  )) +
+  scale_y_continuous(labels = comma, limits = c(0, 125), breaks = seq(0, 125, 25))  +
+  facet_wrap(~ year, ncol = 1) +  
+  labs(
+    x = "Region", 
+    y = "Total Subawardees", 
+    fill = "Funding Source",
+    title = "CS/US Subawardees by Region and Funding Stream",
+    subtitle = "Faceted by Fiscal Year"
+  ) +
+  theme_minimal() +
+  theme(
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_blank(),
+    legend.position = "bottom",
+    plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
+    plot.subtitle = element_text(size = 12, hjust = 0.5),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
+    axis.text.y = element_text(size = 14)                         
+  )
+
+# Show plot
+plot_csus
+
+
+
+```
+
+
+
+
+### Apendix B
+
+```{r}
+
+# This table is used in Appendix B.
+arp_state_submissions <- expected_states|>
+  filter(ProgAcronym %in% c("ARP Act","ARP COVID-19 Testing Supplemental","ARP Unspecified","ARP Support Survivors of Sexual Assualt"))|>
+  filter(ppr_completeness == "Complete")|>
+  select("State Abb","Year")|>
+  distinct()|>
+  mutate(
+    submitted_arp_ppr = "Yes"
+  )
+
+# Count unique subawardees by year, state, and funding stream
+count_appendixb <- subawardees_arp |>
+  filter(year %in% c(2023, 2024)) |>
+  distinct(year, state, stream, name, city) |>
+  group_by(year, state, stream) |>
+  summarize(n = n(), .groups = "drop")
+
+
+
+# Define all expected combinations of state, year, and ARP stream
+# Even if a state didn’t submit or didn’t receive a specific stream, it’s included here
+streams <- c("SA", "DV", "Covid", "ARP Unspecified")
+all_expected <- expand.grid(
+  state = state_abb$`State Abb`,
+  year = c(2023, 2024),
+  stream = streams,
+  stringsAsFactors = FALSE
+)
+
+# Ensure all year variables are numeric before joining
+count_appendixb <- count_appendixb |> mutate(year = as.numeric(year))
+arp_state_submissions <- arp_state_submissions |> mutate(Year = as.numeric(Year))|>
+  rename(`year` = `Year`, `state` = `State Abb`)
+
+# Join the actual subawardee counts and submission status into expected combinations
+# Replace missing counts with "Did Not Submit" only if the state did not submit a PPR;
+# otherwise, replace with "0" to indicate zero subawardees under that stream
+all_expected_final <- all_expected |>
+  left_join(count_appendixb, by = c("state", "year", "stream")) |>
+  left_join(arp_state_submissions, by = c("state", "year")) |>
+  mutate(
+    n = case_when(
+      is.na(submitted_arp_ppr) & is.na(n) ~ "Did Not Submit",    # No ARP submission, including DV, Covid, and SA PPR's.
+      is.na(n) ~ "0",                                            # ARP Submission occurred, but no subawardees under this stream
+      TRUE ~ as.character(n)
+    )
+  )
+
+# Manually fixing MA 2024
+ all_expected_final$n[(all_expected_final$state == "MA") & (all_expected_final$year == "2024") & (all_expected_final$stream == "ARP Unspecified")] <- 0
+
+# Pivot to wide format with one row per state per year and one column per ARP stream
+# Also rename streams to match the full program titles used in the final table
+all_expected_wide <- all_expected_final |>
+  mutate(year = paste0("FY", year)) |>
+  pivot_wider(
+    names_from = stream,
+    values_from = n
+  ) |>
+  select(
+    State = state,
+    FiscalYear = year,
+    `ARP COVID-19 Testing, Vaccines, and Mobile Health Units` = Covid,
+    `ARP Grants to Support Survivors of Sexual Assault` = SA,
+    `ARP Supplemental Funding` = DV,
+    `ARP Unspecified`
+  ) |>
+  arrange(FiscalYear, State)
+
+format_flextable(
+  all_expected_wide,
+  caption = "Appendix B: Funded Subawardees Through ARP Grants for FY23–FY24, Did Not Submit means no ARP Submission including: DV, SA, and Covid PPR's."
+)
+
+```
+
+
+
+## Appendix C: Funded Statewide Coalitions Through ARP Grants 
+
+This is not all the coalitions there are, but just the ones that were funded at all among the 3 sources.
+
+```{r}
+coalition_appendix <- subawardees_arp |>
+  filter(year %in% c(2023, 2024), shelter == "Coalition") |>
+  distinct(stream, year, name, state) |>
+  mutate(status = "Funded") |>
+  pivot_wider(
+    names_from = stream,
+    values_from = status,
+    values_fill = list(status = "Not Funded")
+  ) |>
+  arrange(state, name, year) |>
+  select(
+    "FVPSA ARP State/Territory Funded Statewide Coalition" = name,
+    "State" = state,
+    "Year" = year,
+    "ARP COVID-19 Testing, Vaccines, and Mobile Health Units" = Covid,
+    "ARP Grants to Support Survivors of Sexual Assault" = SA,
+    "ARP Supplemental Funding" = DV,
+    "ARP Unspecified" = "ARP Unspecified"
+  )
+
+format_flextable(
+  coalition_appendix,
+  caption = "Appendix C: Funded Statewide Coalitions Through ARP Grants for FY23–FY24"
+)
+
+
+
+
+
+
+```
+
+
+## Appendix D: Funding Status for Culturally Specific/Underserved Subawardees
+
+
+```{r}
+# Filter for subawardees that served any CS/US group (excluding ambiguous entries)
+by_cat_underserved_combined <- distinct_underserved1 |>
+  filter(!cultspec %in% c("None", "Other", "", "***Other")) |>
+  filter(stream != "CultSpec") |>
+  mutate(value = "Yes") |>
+  select(
+    State = state,
+    City = city,
+    year,
+    Subawardee = name,
+    stream,
+    value
+  )
+
+# Define expected streams
+required_streams <- c("DV", "SA", "Covid", "ARP Unspecified")
+
+# Prepare single table with funding stream status - FIXED VERSION
+csus_funding_table <- by_cat_underserved_combined |>
+  # First, ensure we have unique combinations of subawardee and stream
+  distinct(Subawardee, City, State, year, stream, .keep_all = TRUE) |>
+  mutate(stream = factor(stream, levels = required_streams)) |>
+  pivot_wider(
+    names_from = stream,
+    values_from = value,
+    values_fill = "Not Funded"
+  )
+
+# Ensure all required columns are present
+for (col in required_streams) {
+  if (!col %in% names(csus_funding_table)) {
+    csus_funding_table[[col]] <- "Not Funded"
+  }
+}
+
+# Label streams as Funded / Not Funded
+csus_funding_table <- csus_funding_table |>
+  mutate(across(all_of(required_streams), ~ ifelse(.x == "Yes", "Funded", "Not Funded")))
+
+# Flag multi-stream funding - this should now work correctly
+csus_funding_table <- csus_funding_table |>
+  mutate(`Multi-Stream Funded` = ifelse(
+    rowSums(across(all_of(required_streams)) == "Funded") > 1,
+    "Yes", "No"
+  ))
+
+# Final column selection and sort
+csus_funding_table <- csus_funding_table |>
+  select(State, City, year, Subawardee, Covid, SA, DV, `ARP Unspecified`, `Multi-Stream Funded`) |>
+  arrange(State, Subawardee, City)
+
+# Rename stream columns for clarity
+rename_cols <- intersect(
+  c("Covid", "SA", "DV", "ARP Unspecified"),
+  colnames(csus_funding_table)
+)
+names(rename_cols) <- c(
+  "ARP Covid-19",
+  "ARP SA", 
+  "ARP Supplemental",
+  "ARP Unspecified"
+)[seq_along(rename_cols)]
+
+csus_funding_table <- rename(csus_funding_table, !!!rename_cols)
+
+format_flextable(
+  csus_funding_table,
+  caption = "Appendix D: Funding Status for Subawardees Serving Culturally and Linguistically Specific or Underserved (CS/US) Populations, FY23–FY24"
+)
+
+
+```
+
+
+
+
+## Appendix E: List of ARP Culturally Specific DV/SA Subrecipients
+
+```{r}
+
+cult_table <- cult_spec_list |>
+  mutate(
+    amount_clean = ifelse(amount == "-", "0", amount),
+    FundingAmountNum = readr::parse_number(amount_clean)
+  ) |>
+  select(Organization = subawardee, Location = state, FundingAmountNum)
+
+# Add total row before formatting
+total_row <- data.frame(
+  Organization = "Total funding",
+  Location = "",
+  FundingAmountNum = sum(cult_table$FundingAmountNum, na.rm = TRUE)
+)
+
+# Combine, format amount as currency, and remove numeric col
+cult_table_final <- bind_rows(cult_table, total_row) |>
+  mutate(`Funding Amount` = dollar(FundingAmountNum)) |>
+  select(Organization, Location, `Funding Amount`)
+
+format_flextable(
+  cult_table_final,
+  caption = "Appendix E: List of ARP Culturally Specific DV/SA Subrecipients"
+)
+
+```
+
+## FOR REFERENCE: PPR submission
+
+```{r}
+
+format_flextable(expected_states, caption = "FOR REFERENCE: PPR submission status")
+
+```
+

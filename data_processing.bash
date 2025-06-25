@@ -25,7 +25,7 @@ repo_dir=$PWD
 # Go to Raw Data directory
 cd -- "$OneDrive"
 pwd
-cd "YourDataDirectory/Raw Data"
+cd "Your_Data_Directory/Your_Raw_Data_Folder"
 
 root_dir=$PWD
 
@@ -129,6 +129,6 @@ root_dir=$PWD
 
 # Run R processing for briefing reports
 cd "${repo_dir}"
-Rscript data_analysis/read_data.R
-Rscript data_analysis/read_data_coalitions.R
+Rscript Your_File_Path/read_data.R
+Rscript Your_File_Path/read_data_coalitions.R
 

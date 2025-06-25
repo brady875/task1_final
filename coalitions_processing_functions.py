@@ -310,7 +310,7 @@ def process_sheets(
     soa_sheetName,
     join_cols,
     coalition_names,
-    ppr_year="2024"  # Default to 2023; dynamically updated based on the flag
+    ppr_year="2024" 
 ):
     """Process coalition sheets
     
@@ -422,7 +422,7 @@ def process_sheets(
 
     # Define narrative questions based on PPR year
     if ppr_year == "2024":
-        narrative_prefix = ["1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. "]  # Extra questions in 2024
+        narrative_prefix = ["1. ", "2. ", "3. ", "4. ", "5. ", "6. ", "7. "]  # Extra narrative questions in 2024
     elif ppr_year == "2023":
         narrative_prefix = ["1. ", "2. ", "3. ", "4. ", "5. "]
 

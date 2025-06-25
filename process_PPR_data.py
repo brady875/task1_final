@@ -26,25 +26,16 @@ from dateutil.parser import parse
 from functools import reduce
 import glob
 
-# Get OneDrive task path
-os.environ['OneDrive'] = "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation"
 
-# Verify the OneDrive environment variable
-one_drive_path = os.getenv('OneDrive')
-print("OneDrive path:", one_drive_path)
 
-# Get OneDrive task path
-default_data_path = os.path.join(one_drive_path, 'ACF FVPS', 'Data', 'Quantitative')
-print("Default data path:", default_data_path)
-
-# State data path
-#default_data_path = os.path.join(os.environ['OneDrive'], 'ACF Office of Family Violence Prevention and Services - General', 'Data', 'Quantitative')
+# Define data path
+default_data_path = os.path.join(os.environ['OneDrive'], 'Your_Root_Directory', 'Your_Data_Folder')
 
 def get_parser():
     parser = argparse.ArgumentParser(
         description="Process grantee PPR data and save as new file.",
     )
-
+    # === Arguments for 2018-2021 States & Tribes  ===
     parser.add_argument("--process_formula", "-f", action='store_true')
 
     parser.add_argument(
@@ -61,6 +52,7 @@ def get_parser():
         help='File path of previously processed data. Default is "Processed Data/States and Tribes/HistoricalPPR.xlsx"',
     )
 
+    # === Arguments for 2001-2023 Coalitions  ===
     parser.add_argument(
         "--process_coalitions",
         "-pc",
@@ -95,7 +87,7 @@ def get_parser():
         help='File path of lookup table for reference in processing. Default is "Lookup Tables/Data_Element_Crosswalk.xlsx"',
     )
 
-    # New arguments for 2024 coalitions PPR
+    # === Arguments for 2024 Coalitions  ===
     parser.add_argument(
         "--process_new_coalitions",
         "-pc2024",
@@ -117,7 +109,7 @@ def get_parser():
         help="File path for processed coalitions PPR data for 2024.",
     )
 
-    # New arguments for 2024 States & Tribes PPR
+    # ===  Arguments for 2024 States & Tribes  ===
 
     parser.add_argument(
         "--process_new_states",
@@ -140,7 +132,7 @@ def get_parser():
         help="File path for processed States and Tribes PPR data for 2024.",
     )
 
-    # new crosswalk file argument for Coalitions & States PPR's FY24
+    # === Crosswalk for 2024 States & Tribes and Coalitions === 
     parser.add_argument(
         "--crosswalk_filename_2024",
         "-l2024",
@@ -152,21 +144,21 @@ def get_parser():
 
 
 def main(
-    process_formula,
-    formula_OLDC_data_filename,
-    processed_data_filename,
-    process_coalitions,
-    coalitions_OLDC_filename,
-    processed_coalitions_data_filename,
-    coalitions_names_filename,
-    crosswalk_filename,
-    process_new_coalitions,             # New for 2024 Coalitions
-    new_coalitions_OLDC_filename,      # New for 2024 Coalitions
-    processed_new_coalitions_data_filename,  # New for 2024 Coalitions
-    process_new_states,                # New for 2024 States
-    new_states_OLDC_filename,          # New for 2024 States
-    processed_new_states_data_filename,  # New for 2024 States
-    crosswalk_filename_2024            # Shared Crosswalk for 2024
+    process_formula,                    # To process States & Tribes data (2018-2021)
+    formula_OLDC_data_filename,         # Raw OLDC data path for States & Tribes (2018-2021)
+    processed_data_filename,            # Path to the existing processed file to back up and overwrite with new States & Tribes output
+    process_coalitions,                 # To process 2023 Coalitions data
+    coalitions_OLDC_filename,           # Raw OLDC data path for 2023 Coalitions data
+    processed_coalitions_data_filename, # Output path to save processed 2023 Coalitions data
+    coalitions_names_filename,          # CSV containing name mappings to normalize coalition names during cleaning
+    crosswalk_filename,                 # Crosswalk for 2023 data
+    process_new_coalitions,             # To process 2024 Coalitions data
+    new_coalitions_OLDC_filename,      # Raw OLDC data path for 2024 Coalitions data
+    processed_new_coalitions_data_filename,  # Output path to save proessed 2024 Coalitions data
+    process_new_states,                # To process 2024 States & Tribes data
+    new_states_OLDC_filename,          # Raw OLDC data path for 2024 States & Tribes data
+    processed_new_states_data_filename,  # Output path to save processed 2024 States & Tribes data
+    crosswalk_filename_2024            # Crosswalk for 2024 data
 ):
     string_date = datetime.today().strftime('%m%d%Y_%H%M%S')
     if process_formula:
@@ -484,8 +476,7 @@ def main(
         print("Processing 2023 OLDC data - COMPLETE")
         print(time.time() - t1)
 
-    # TODO: Add section for processing new states PPR (can start by copying the above section and then make whatever 
-    # changes are necessary given the new file)
+
 
     # New States & Tribes Processing
     # ==================================================================================================================
@@ -966,7 +957,7 @@ def main(
         (coal_dat, coal_xw, coalition_names) = cpf.read_coalitions_data(
             new_coalitions_OLDC_filename,  # new 2024 raw coalitions file
             crosswalk_filename_2024,       # 2024 crosswalk file
-            coalitions_names_filename,     # Reuse coalition names lookup table (i dont think this requires a change)
+            coalitions_names_filename,     # Reuse coalition names lookup table 
         )
         print("Reading in new 2024 coalitions data - COMPLETE")
 
