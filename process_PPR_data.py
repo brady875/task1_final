@@ -36,19 +36,20 @@ def get_parser():
         description="Process grantee PPR data and save as new file.",
     )
     # === Arguments for 2018-2021 States & Tribes  ===
+    # Replace file paths accordingly
     parser.add_argument("--process_formula", "-f", action='store_true')
 
     parser.add_argument(
         "--formula_OLDC_data_filename",
         "-o",
-        default=glob.glob(os.path.join(default_data_path,"Raw Data/States and Tribes/fvps_sf-ppr_state_ver__6_(fy__2018_to_2021)*.xlsx"))[0],
-        help='File path of raw formula OLDC data. Default is "Raw Data/States and Tribes/fvps_sf-ppr_state_ver__6_(fy__2018_to_2021).xlsx"',
+        default=glob.glob(os.path.join(default_data_path,"Folder that contains the raw OLDC extracted data/States and Tribes/fvps_sf-ppr_state_ver__6_(fy__2018_to_2021)*.xlsx"))[0],
+        help='File path of raw formula OLDC data. Default is "Folder that contains the raw OLDC extracted data/States and Tribes/fvps_sf-ppr_state_ver__6_(fy__2018_to_2021).xlsx"',
     )
 
     parser.add_argument(
         "--processed_data_filename",
         "-p",
-        default=glob.glob(os.path.join(default_data_path, "Processed Data/States and Tribes/HistoricalPPR*.xlsx"))[0],
+        default=glob.glob(os.path.join(default_data_path, "Insert folder name where the processed data will be stored/States and Tribes/HistoricalPPR*.xlsx"))[0],
         help='File path of previously processed data. Default is "Processed Data/States and Tribes/HistoricalPPR.xlsx"',
     )
 
@@ -63,13 +64,13 @@ def get_parser():
     parser.add_argument(
         "--processed_coalitions_data_filename",
         "-cf",
-        default=glob.glob(os.path.join(default_data_path, "Processed Data/Coalitions/coalitions_processed*.xlsx"))[0]
+        default=glob.glob(os.path.join(default_data_path, "Insert folder name where the processed data will be stored/Coalitions/coalitions_processed*.xlsx"))[0]
     )
 
     parser.add_argument(
         "--coalitions_OLDC_filename",
         "-c",
-        default=glob.glob(os.path.join(default_data_path, "Raw Data/Coalitions/fvpsa_performance_progress_report_ver_1_(fy_2001_to_2024)*.xlsx"))[0],
+        default=glob.glob(os.path.join(default_data_path, "Folder that contains the raw OLDC extracted data/Coalitions/fvpsa_performance_progress_report_ver_1_(fy_2001_to_2024)*.xlsx"))[0],
         help='File path of raw coalitions OLDC data. Default is "Raw Data/Coalitions/fvpsa_performance_progress_report_ver_1_(fy_2001_to_2024).xlsx"',
     )
 
@@ -98,14 +99,14 @@ def get_parser():
     parser.add_argument(
         "--new_coalitions_OLDC_filename",
         "-c2024",
-        default=glob.glob(os.path.join(default_data_path, "Raw Data/Coalitions 2024/fvpsa_performance_progress_report_ver_2_(fy_2024_to_2027)*.xlsx"))[0], 
+        default=glob.glob(os.path.join(default_data_path, "Folder that contains the raw OLDC extracted data/Coalitions 2024/fvpsa_performance_progress_report_ver_2_(fy_2024_to_2027)*.xlsx"))[0], 
         help="File path of raw coalitions PPR data for 2024.",
     )
 
     parser.add_argument(
         "--processed_new_coalitions_data_filename",
         "-cf2024",
-        default=glob.glob(os.path.join(default_data_path, "Processed Data/Coalitions 2024/coalitions_processed*.xlsx"))[0],
+        default=glob.glob(os.path.join(default_data_path, "Insert folder name where the processed data will be stored/Coalitions 2024/coalitions_processed*.xlsx"))[0],
         help="File path for processed coalitions PPR data for 2024.",
     )
 
@@ -121,14 +122,14 @@ def get_parser():
     parser.add_argument(
         "--new_states_OLDC_filename",
         "-s2024",
-        default=glob.glob(os.path.join(default_data_path, "Raw Data/States and Tribes 2024/fvps_sf-ppr_state_ver__8_(fy__2024_to_2027)*.xlsx"))[0],
+        default=glob.glob(os.path.join(default_data_path, "Folder that contains the raw OLDC extracted data/States and Tribes 2024/fvps_sf-ppr_state_ver__8_(fy__2024_to_2027)*.xlsx"))[0],
         help="File path of raw States and Tribes PPR data for 2024.",
     )
 
     parser.add_argument(
         "--processed_new_states_data_filename",
         "-spf2024",
-        default=glob.glob(os.path.join(default_data_path, "Processed Data/States and Tribes 2024/HistoricalPPR*.xlsx"))[0],
+        default=glob.glob(os.path.join(default_data_path, "Insert folder name where the processed data will be stored/States and Tribes 2024/HistoricalPPR*.xlsx"))[0],
         help="File path for processed States and Tribes PPR data for 2024.",
     )
 

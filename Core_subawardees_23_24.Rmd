@@ -60,7 +60,7 @@ library(writexl)
  data_folder <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data"
 
 # Load helper scripts
-
+# Update file paths accordingly 
 #  source(
 #   file.path(
 #     here::here(),
@@ -82,8 +82,8 @@ library(writexl)
 # Load data folder
 # data_folder <- file.path(
 #   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
-#   "ACF Office of Family Violence Prevention and Services - General",
-#   "Data")
+#   "Your OneDrive name",
+#   "Your data folder")
 
 # Select the version for data_for_r produced by process_ppr_data.py
 version = "20250612T172919Z-def97"
@@ -102,18 +102,6 @@ lapply(names(dat), function(name) {
  funding_path <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Background Information and Resources/Funding Tables/Funding Tables_updated_07062024.xlsx"
 
  funding <- read_excel(funding_path)
-
-# Load data to funding table
- # funding_path <- file.path(
- #   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
- #   "ACF Office of Family Violence Prevention and Services - General",
- #   "Background Information and Resources",
- #   "Funding Tables"
- # )
- # 
- # funding <- read_excel(file.path(funding_path,
- #                       "Funding Tables_updated_07062024.xlsx"))
- 
  
  
  # Load data to funding table
@@ -128,20 +116,6 @@ lapply(names(dat), function(name) {
  #                       "Funding Tables_updated_07062024.xlsx"))
 
 
-
-
-# Load HHS Regions data
-# regional_list <- read_excel(file.path(
-#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
-#   "ACF Office of Family Violence Prevention and Services - General",
-#   "Background Information and Resources",
-#   "hhs_regions.xlsx")
-# ) |>
-#   rename(
-#     "PostalCode" = `State Abb`,
-#     "Region" = `HHS Region`
-#   ) |>
-#   select(-c(State))
  
  
 # Load HHS Regions data
@@ -186,21 +160,6 @@ lapply(names(dat), function(name) {
    ) |>
    filter(statewide_dv == TRUE)
 
-
-# coalitions <- read_excel(file.path(
-#   data_folder,
-#   "Quantitative",
-#   "Lookup Tables",
-#   "core_coalition_names.xlsx"
-# ),
-# sheet = "Updated Data name") |>
-#   select(
-#     data_name,
-#     coalition,
-#     state,
-#     statewide_dv
-#   ) |>
-#   filter(statewide_dv == TRUE)
 
 
 # Load Core Coalition Names
@@ -341,7 +300,7 @@ distinct_sub <- subawardees_core |>
     "Fiscal Year" = Fy
   ) 
 
-# Update table caption
+
 format_flextable(distinct_sub, caption = "Table X. Summary of Family Violence Prevention and Services Act Awards to States and Territories, FY23-FY24 Subawardees")
 
 ```
@@ -887,7 +846,7 @@ plot_award <- ggplot(by_shelter_award,
     axis.text.y = element_text(size = 16)                         
   )
 
-# Ensure the plot is displayed
+
 print(plot_award)
 
 

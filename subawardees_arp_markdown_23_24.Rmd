@@ -43,41 +43,6 @@ library(qs)
 library(webshot2)
 
 
-# Load helper functions
-# source(
-#   file.path(
-#     here::here(),
-#     "data_analysis",
-#     "ARP",
-#     "arp_data_analysis_helper_functions.R"
-#   )
-# )
-# 
-# source(
-#   file.path(
-#     here::here(),
-#     "data_analysis",
-#     "ARP",
-#     "arp_subawardee_helper_functions.R"
-#   )
-# )
-# 
-# source(
-#   file.path(
-#     here::here(),
-#     "data_analysis",
-#     "briefing_report_utils",
-#     "briefing_report_flextable_functions.R"
-#   )
-# )
-
-# Load data folder
-# data_folder <- file.path(
-#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
-#   "ACF Office of Family Violence Prevention and Services - General",
-#   "Data"
-# )
-
 
 # Load helper functions
 # Update file path locations accordingly 
@@ -153,19 +118,7 @@ lapply(names(dat), function(name) {
 
 
 
-# Load funding tables
-# funding_path <- file.path(
-#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
-#   "ACF Office of Family Violence Prevention and Services - General",
-#   "Background Information and Resources",
-#   "Funding Tables"
-# )
 
- funding_path <- "/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Background Information and Resources/Funding Tables/Funding Tables_updated_07062024.xlsx"
-
- funding <- read_excel(funding_path)
-
- 
  # Using a 2023 specific lookup file to map culturally specific values to their corresponding Cultspec categories
  lookup_2023_path <- '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS/Data/Quantitative/Lookup Tables/Data_Element_Crosswalk.xlsx'
 
@@ -181,16 +134,6 @@ lapply(names(dat), function(name) {
  #              sheet = "cultspec_subawardee")|>
  #              distinct()
  
- 
- # funding_table <- read_xlsx(
- #   file.path(
- #     dirname(data_folder),
- #     "Background Information and Resources",
- #     "Funding Tables",
- #     "Funding Tables_updated_07062024.xlsx"
- #   ),
- #   sheet = "Sheet1")
-#  Read in Sheet1 from the specified Excel file
  
 
  # Load funding table
@@ -268,16 +211,6 @@ state <- bind_rows(wide_23, wide_24) |>
 # Global variables ----
 init_report_link_row(params$report_link)
 
-# read subawardee data
-
-# Load state abbreviation table
-# state_abb <- read_xlsx(
-#   file.path(
-#     dirname(data_folder),
-#     "Background Information and Resources",
-#     "hhs_regions.xlsx"
-#   ))
-
 
 # Load state abbreviation table
 # Update file paths accordingly
@@ -294,40 +227,22 @@ init_report_link_row(params$report_link)
  )
 
 
-# ofvps_folder <- file.path(
-#   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
-#   "ACF Office of Family Violence Prevention and Services - General"
-# )
- 
  
  # Replace file path's accordingly
  # ofvps_folder <- file.path(
 #   gsub("\\\\","/", gsub("OneDrive - ","", Sys.getenv("OneDrive"))),
-#   "ACF Office of Family Violence Prevention and Services - General"
+#   "Your OneDrive Folder"
 # )
 
  ofvps_folder <- '/Users/pursino/Library/CloudStorage/OneDrive-TheMITRECorporation/ACF FVPS'
 
-# Load cult_spec_list that contains CSSIRC Subrecipient information
-# cult_spec_list <- read_xlsx(
-#   file.path(
-#     dirname(ofvps_folder),
-#     "ACF Office of Family Violence Prevention and Services - General",
-#     "Task 1 Reporting",
-#     "Reports",
-#     "Data",
-#     "Data_Archive_092024",
-#     "CSSIRC Subrecipient List-Final.xlsx"
-#   ),
-#   sheet = "MITRE-master_list") |>
-#   filter(year %in% c("FY23", "FY24"))
  
 # Load cult_spec_list that contains CSSIRC Subrecipient information
 # Update file paths accordingly 
 # cult_spec_list <- read_xlsx(
 #   file.path(
 #     dirname(ofvps_folder),
-#     "Your OneDrive Name",
+#     "Your OneDrive Folder",
 #     "Folder name that contains the file name in the following line", 
 #     "CSSIRC Subrecipient List-Final.xlsx"
 #   ),
