@@ -786,19 +786,21 @@ ggplot(chart_subawardees_23, aes(x = `HHS Region`, y = n, fill = stream)) +
   scale_y_continuous(labels = comma, limits = c(0, 150), breaks = seq(0, 150, 50)) + 
   labs(
     x = "Region",
-    y = "Total Subawardees",
+    y = "Number of Sub-Recipients",
     fill = "Funding Source",
     title = "Figure 1. FY23: Number of FVPSA ARP state and territory shelter subawardees by HHS region"
   ) +
   theme_minimal() +
   theme(
     legend.position = "bottom",
+    legend.text = element_text(size = 18),  
+    legend.title = element_text(size = 20),      
     axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
     axis.text.y = element_text(size = 14),                        
     axis.title.x = element_text(size = 20),                       
     axis.title.y = element_text(size = 20),                       
     plot.title = element_text(size = 20, face = "bold"),
-    plot.subtitle = element_text(size = 18)
+    plot.subtitle = element_text(size = 20)
   )
 
 # FY24 Plot
@@ -814,19 +816,21 @@ ggplot(chart_subawardees_24, aes(x = `HHS Region`, y = n, fill = stream)) +
   scale_y_continuous(labels = comma, limits = c(0, 150), breaks = seq(0, 150, 50)) + 
   labs(
     x = "Region",
-    y = "Total Subawardees",
+    y = "Number of Sub-Recipients",
     fill = "Funding Source",
     title = "Figure 2. FY24: Number of FVPSA ARP state and territory shelter subawardees by HHS region"
   ) +
   theme_minimal() +
   theme(
     legend.position = "bottom",
+    legend.text = element_text(size = 18),  
+    legend.title = element_text(size = 20),      
     axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
     axis.text.y = element_text(size = 14),                        
     axis.title.x = element_text(size = 20),                       
     axis.title.y = element_text(size = 20),                       
     plot.title = element_text(size = 20, face = "bold"),
-    plot.subtitle = element_text(size = 18)
+    plot.subtitle = element_text(size = 20)
   )
 
 ```
@@ -870,7 +874,7 @@ plot_nonshelter_region_23 <- ggplot(chart_subawardees_non_23,
   labs(
     title = "Figure X. Number of FY23 FVPSA ARP state and territory non-shelter subawardees by HHS region",
     x = "Region",
-    y = "Total Subawardees",
+    y = "Number of Sub-Recipients",
     fill = "Funding Source"
   ) +
   theme_minimal() +
@@ -878,6 +882,8 @@ plot_nonshelter_region_23 <- ggplot(chart_subawardees_non_23,
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     legend.position = "bottom",
+    legend.text = element_text(size = 16),  
+    legend.title = element_text(size = 18),      
     plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
     axis.title.x = element_text(size = 20),
     axis.title.y = element_text(size = 20),
@@ -919,7 +925,7 @@ plot_nonshelter_region_24 <- ggplot(chart_subawardees_non_24,
   labs(
     title = "Figure Y. Number of FY24 FVPSA ARP state and territory non-shelter subawardees by HHS region",
     x = "Region",
-    y = "Total Subawardees",
+    y = "Number of Sub-Recipients",
     fill = "Funding Source"
   ) +
   theme_minimal() +
@@ -927,6 +933,8 @@ plot_nonshelter_region_24 <- ggplot(chart_subawardees_non_24,
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     legend.position = "bottom",
+    legend.title = element_text(size = 18),      
+    legend.text = element_text(size = 16),  
     plot.title = element_text(size = 14, face = "bold", hjust = 0.5),
     axis.title.x = element_text(size = 20),
     axis.title.y = element_text(size = 20),
@@ -987,7 +995,7 @@ plot_coalition_region_23 <- ggplot(chart_subawardees_coa_23,
   labs(
     title = "Figure X. Number of FY23 FVPSA ARP coalition subawardees by HHS region",
     x = "Region", 
-    y = "Total Subawardees", 
+    y = "Number of Sub-Recipients", 
     fill = "Funding Source"
   ) +
   theme_minimal() +
@@ -995,11 +1003,13 @@ plot_coalition_region_23 <- ggplot(chart_subawardees_coa_23,
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     legend.position = "bottom",
+    legend.text = element_text(size = 16),  
+    legend.title = element_text(size = 18),      
     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
     axis.title.x = element_text(size = 20),
     axis.title.y = element_text(size = 20),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  # Added size for x-axis text
-    axis.text.y = element_text(size = 14),                        # Added size for y-axis text
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
+    axis.text.y = element_text(size = 14),                        
     plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
   )
 
@@ -1039,7 +1049,7 @@ plot_coalition_region_24 <- ggplot(chart_subawardees_coa_24,
   labs(
     title = "Figure Y. Number of FY24 FVPSA ARP coalition subawardees by HHS region",
     x = "Region", 
-    y = "Total Subawardees", 
+    y = "Number of Sub-Recipients", 
     fill = "Funding Source"
   ) +
   theme_minimal() +
@@ -1047,11 +1057,13 @@ plot_coalition_region_24 <- ggplot(chart_subawardees_coa_24,
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     legend.position = "bottom",
+    legend.text = element_text(size = 16),  
+    legend.title = element_text(size = 18),      
     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
     axis.title.x = element_text(size = 20),
     axis.title.y = element_text(size = 20),
-    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  # Added size for x-axis text
-    axis.text.y = element_text(size = 14),                        # Added size for y-axis text
+    axis.text.x = element_text(angle = 45, hjust = 1, size = 18),  
+    axis.text.y = element_text(size = 14),                        
     plot.margin = margin(t = 20, r = 20, b = 20, l = 20)
   )
 
@@ -1240,7 +1252,7 @@ plot_csus <- ggplot(by_cat_underserved_graph2,
   facet_wrap(~ year, ncol = 1) +  
   labs(
     x = "Region", 
-    y = "Total Subawardees", 
+    y = "Number of Sub-Recipients", 
     fill = "Funding Source",
     title = "CS/US Subawardees by Region and Funding Stream",
     subtitle = "Faceted by Fiscal Year"
@@ -1250,6 +1262,8 @@ plot_csus <- ggplot(by_cat_underserved_graph2,
     panel.grid.minor = element_blank(),
     panel.grid.major.x = element_blank(),
     legend.position = "bottom",
+    legend.text = element_text(size = 16),  
+    legend.title = element_text(size = 18),      
     plot.title = element_text(size = 14, hjust = 0.5, face = "bold"),
     plot.subtitle = element_text(size = 12, hjust = 0.5),
     axis.title.x = element_text(size = 20),
